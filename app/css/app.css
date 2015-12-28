@@ -1,0 +1,51 @@
+.item-stack {
+    display: inline-block;
+    position: relative;
+}
+
+.item-stack .stack-size {
+  position: absolute;
+  bottom: 0;
+  right: 0px;
+  width: 20px;
+  text-align: center;
+  background: white;
+  color: black;
+  font-weight: bold;
+}
+
+.ingredient {
+  display: inline-block;
+  position: relative;
+}
+
+.ingredients {
+  display: inline-block;
+}
+
+.ingredient .items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: inline-block;
+}
+.ingredient .ingredient-chooser {
+  margin: 0;
+  padding: 0;
+  width: 20px;
+  border-radius: 0;
+  min-width: 14px;
+  display: inline-block;
+  vertical-align: top;
+  height: 50px;
+}
+
+.goal-count {
+  width: 75px;
+}
+.goal-count input {
+  width: 100%;
+  border: none;
+  outline: none;
+  text-align: right;
+}

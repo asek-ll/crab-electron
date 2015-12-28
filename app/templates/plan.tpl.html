@@ -1,0 +1,87 @@
+<div ng-controller="PlanGoalsCtrl">
+
+  <div ng-controller="ItemSelectorCtrl as ctrl">
+    <md-autocomplete ng-disabled="ctrl.isDisabled" md-no-cache="ctrl.noCache" md-selected-item="ctrl.selectedItem" md-search-text="ctrl.searchText" md-selected-item-change="ctrl.selectedItemChange(item)" md-items="item in ctrl.querySearch(ctrl.searchText)"
+    md-item-text="item.displayName" md-min-length="0" placeholder="Select item">
+      <md-item-template>
+        <item-stack item="item"></item-stack>
+        <span md-highlight-text="ctrl.searchText" md-highlight-flags="^i">{{item.displayName}}</span>
+      </md-item-template>
+      <md-not-found>
+        No items matching "{{ctrl.searchText}}" were found.
+      </md-not-found>
+    </md-autocomplete>
+  </div>
+
+  <md-toolbar class="md-theme-light">
+    <h2 class="md-toolbar-tools">
+      <span>Target Items</span>
+    </h2>
+  </md-toolbar>
+  <md-content>
+    <md-list>
+      <md-list-item class="md-1-line goal" ng-repeat="goal in goals">
+      <div flex="initial" class="md-display-1 goal-count">
+        <!--<md-input-container flex="initial" class="md-title goal-count">-->
+          <!--<label>Count</label>-->
+          <input ng-model="goal.count" type="number">
+        <!--</md-input-container>-->
+      </div>
+        <span>
+        <item-stack item="goal.item"></item-stack>
+      </span>
+        <md-button class="md-secondary" ng-click="removeGoal(goal)">Remove</md-button>
+      </md-list-item>
+
+    </md-list>
+  </md-content>
+</div>
+
+<md-toolbar class="md-theme-light">
+  <h2 class="md-toolbar-tools">
+      <span>Crafting step</span>
+    </h2>
+</md-toolbar>
+<md-content>
+  <md-list>
+    <md-list-item class="steps md-1-line" ng-repeat="step in craftingSteps">
+      <span class="md-display-1">{{ step.count }}x</span>
+      <span>
+      <recipe data="step.recipe"></recipe>
+      <md-button class="md-secondary" ng-click="removeCraftingStep(step)">Remove</md-button>
+    </span>
+    </md-list-item>
+  </md-list>
+</md-content>
+
+<md-toolbar class="md-theme-light">
+  <h2 class="md-toolbar-tools">
+      <span>Required Items</span>
+    </h2>
+</md-toolbar>
+<md-content>
+  <md-list>
+    <md-list-item class="required-item md-1-line" ng-repeat="required in requiredItems">
+      <item-stack sid="required.item.sid" size="required.count"></item-stack>
+      <md-button class="md-secondary" ng-click="expandRequired(required, $event)">Expand</md-button>
+    </md-list-item>
+  </md-list>
+</md-content>
+
+<md-toolbar class="md-theme-light">
+  <h2 class="md-toolbar-tools">
+      <span>Other Items</span>
+    </h2>
+</md-toolbar>
+<md-content>
+  <md-list>
+    <md-list-item class="required-item md-1-line" ng-repeat="required in havingItems">
+      <item-stack sid="required.item.sid" size="required.count"></item-stack>
+    </md-list-item>
+  </md-list>
+</md-content>
+
+<!--<div ng-controller="PlanStepsCtrl">-->
+<!--</div>-->
+<!--<div ng-controller="PlanRequirementCtrl">-->
+<!--</div>-->

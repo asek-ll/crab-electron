@@ -1,0 +1,20 @@
+<div layout="row">
+  <md-input-container>
+    <label>Item name</label>
+    <input ng-model="filter.query">
+  </md-input-container>
+</div>
+
+<md-list>
+  <md-list-item class="md-1-line" ng-repeat="item in items">
+
+    <item-stack item="item"></item-stack>
+
+    <div class="md-list-item-text">
+      <h3> 
+        <a href="#/item/{{item.sid}}"> {{ item.displayName }} </a>
+      </h3>
+    </div>
+    <md-divider inset></md-divider>
+  </md-list-item>
+</md-list>

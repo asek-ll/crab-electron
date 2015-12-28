@@ -1,0 +1,10 @@
+<div class="ingredient">
+  <ul class="items">
+    <li ng-repeat="item in ingredient.items" ng-show="$index == ingredient.activeIndex">
+      <item-stack sid="item.sid" size="item.size"></item-stack>
+    </li>
+  </ul>
+  <md-button class="ingredient-chooser" ng-click="next()" ng-show="itemCount>1" aria-label="Next item">
+    <md-icon md-svg-icon="../bower_components/angular-material/demos/toolbar/demoBasicUsage/img/icons/more_vert.svg"></md-icon>
+  </md-button>
+</div>

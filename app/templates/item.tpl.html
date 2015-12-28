@@ -1,0 +1,18 @@
+<md-list>
+  <md-list-item class="md-1-line" ng-repeat="recipe in recipes">
+
+    <div class="md-list-item-text">
+      {{ recipe.handlerName }}
+
+      <ingredient data="recipe.result"></ingredient>
+
+      ==
+
+      <span class="ingredients">
+        <ingredient data="ingredient" ng-repeat="ingredient in recipe.ingredients"></ingredient>
+      </span>
+    </div>
+
+    <md-divider inset></md-divider>
+  </md-list-item>
+</md-list>
