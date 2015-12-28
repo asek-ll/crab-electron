@@ -11,15 +11,8 @@
       <md-list-item class="md-1-line" ng-repeat="recipe in recipes">
 
         <div class="md-list-item-text">
-          {{ recipe.handlerName }}
+          <recipe data="recipe"></recipe>
 
-          <ingredient data="recipe.result"></ingredient>
-
-          ==
-
-          <span class="ingredients">
-        <ingredient data="ingredient" ng-repeat="ingredient in recipe.ingredients"></ingredient>
-      </span>
           <md-button ng-click="select(recipe)">Select</md-button>
         </div>
 
