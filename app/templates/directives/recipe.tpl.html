@@ -1,7 +1,11 @@
 <ingredient data="recipe.result"></ingredient>
 
-<span class="md-display-2" title="{{ recipe.handlerName }}">&#8656;</span>
+<a class="md-display-2" title="{{ recipe.handlerName }}" ng-href="#/recipe/{{ recipe._id }}">&#8656;</a>
 
 <span class="ingredients">
   <ingredient data="ingredient" ng-repeat="ingredient in recipe.ingredients"></ingredient>
+</span>
+
+<span class="others">
+  <ingredient data="other" ng-repeat="other in recipe.others"></ingredient>
 </span>

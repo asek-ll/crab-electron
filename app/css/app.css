@@ -49,3 +49,16 @@
   outline: none;
   text-align: right;
 }
+
+.node {
+  stroke: #000;
+}
+
+.node-leaf {
+  stroke: #f00;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}

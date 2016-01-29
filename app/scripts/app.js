@@ -2,7 +2,7 @@
 angular.module('app', ['ngRoute', 'ngMaterial', 'ngAnimate']);
 
 angular.module('app').config(['$routeProvider',
-  function ($routeProvider) {
+  function($routeProvider) {
     var templateBase = './templates';
 
     $routeProvider.when('/', {
@@ -21,6 +21,30 @@ angular.module('app').config(['$routeProvider',
       controllerAs: 'ctrl',
     });
 
+    $routeProvider.when('/plan/:id', {
+      templateUrl: templateBase + '/plan.tpl.html',
+      controller: 'PlanCtrl',
+      controllerAs: 'ctrl',
+    });
+
+    $routeProvider.when('/plans', {
+      templateUrl: templateBase + '/views/plans-list.tpl.html',
+      controller: 'PlansListCtrl',
+      controllerAs: 'ctrl',
+    });
+
+    $routeProvider.when('/expand-rules', {
+      templateUrl: templateBase + '/views/expand-rules.tpl.html',
+      controller: 'ExpandRulesCtrl',
+      controllerAs: 'ctrl',
+    });
+
+    $routeProvider.when('/recipe/:id', {
+      templateUrl: templateBase + '/views/recipe.tpl.html',
+      controller: 'RecipeCtrl',
+      controllerAs: 'ctrl',
+    });
+
     $routeProvider.otherwise({
       redirectTo: '/'
     });
@@ -29,15 +53,15 @@ angular.module('app').config(['$routeProvider',
 
 angular.module('app').controller('ItemsListCtrl', ['$scope', 'itemService',
 
-  function ($scope, itemService) {
+  function($scope, itemService) {
 
-    $scope.$watch('filter.query', function (query) {
-      itemService.getItems(query).then(function (items) {
+    $scope.$watch('filter.query', function(query) {
+      itemService.getItems(query).then(function(items) {
         $scope.items = items;
       });
     });
 
-    $scope.getItemIcon = function (item) {
+    $scope.getItemIcon = function(item) {
       var nameParts = item.name.split(':');
       var modName = nameParts[0].replace('|', '_');
       return '../data/icons/' + modName + '/' + item.id + '_' + item.meta + '.png';
@@ -46,206 +70,39 @@ angular.module('app').controller('ItemsListCtrl', ['$scope', 'itemService',
 ]);
 
 angular.module('app').controller('ItemCtrl', ['$scope', '$routeParams', 'recipeService', 'itemService',
-  function ($scope, $routeParams, recipeService, itemService) {
+  function($scope, $routeParams, recipeService, itemService) {
 
-    recipeService.getRecipes($routeParams.sid).then(function (recipes) {
+    recipeService.getRecipes($routeParams.sid).then(function(recipes) {
       $scope.recipes = recipes;
     });
   }
 ]);
 
-angular.module('app').directive('ingredient', ['itemService', '$compile',
-  function (itemService, $compile) {
-    return {
-      restrict: 'E',
-      scope: {
-        ingredient: '=data'
-      },
-      transclude: true,
-      templateUrl: './templates/ingredient.tpl.html',
-      link: function (scope, element) {
-        scope.itemCount = scope.ingredient.items.length;
-        scope.ingredient.activeIndex = scope.ingredient.activeIndex || 0;
-
-        scope.next = function () {
-          scope.ingredient.activeIndex = (scope.ingredient.activeIndex + 1) % scope.itemCount;
-        };
-      },
-    };
-  }
-]);
-
-angular.module('app').directive('itemStack', ['itemService',
-  function (itemService) {
-    return {
-      restrict: 'E',
-      scope: {
-        item: '=item',
-        sid: '=sid',
-        size: '=size',
-      },
-      transclude: true,
-      templateUrl: './templates/directives/item-stack.tpl.html',
-      link: function (scope, element) {
-        var item = scope.item;
-        var sid = scope.sid;
-
-        scope.itemIcon = function (item) {
-          if (!item) {
-            return '';
-          }
-          var nameParts = item.name.split(':');
-          var modName = nameParts[0].replace('|', '_');
-          return '../data/icons/' + modName + '/' + item.id + '_' + item.meta + '.png';
-        };
-
-        if (item) {
-          scope.item = item;
-        } else if (sid) {
-          itemService.getItemBySid(sid).then(function (item) {
-            scope.item = item;
-          });
-        }
-      },
-    };
-  }
-]);
-
 angular.module('app').controller('ToolbarCtrl', ['$scope', '$window',
-  function ($scope, $window) {
-    $scope.goBack = function () {
+  function($scope, $window) {
+    $scope.goBack = function() {
       $window.history.back();
     };
   }
 ]);
 
-angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialog',
-  function ($scope, itemService, $mdDialog) {
+angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialog', 'plansService', '$routeParams', '$location', 'expandRulesService', '$q',
+  function($scope, itemService, $mdDialog, plansService, $routeParams, $location, expandRulesService, $q) {
+    var ctrl = this;
+
     $scope.requiredItems = {};
     $scope.havingItems = {};
-    $scope.craftingSteps = [];
+    $scope.isGraphEnabled = false;
 
-    $scope.goals = [];
-    $scope.inventory = [];
+    $scope.plan = plansService.createNewPlan();
 
-    var addToItemMap = function (items, item, count) {
-      if (count === 0) {
-        return;
-      }
-      var exists = items[item.sid];
-      if (!exists) {
-        items[item.sid] = {
-          item: item,
-          count: count
-        };
-      } else {
-        exists.count += count;
-        if (exists.count === 0) {
-          delete items[item.sid];
-        }
-      }
-    };
-
-    var addToItemList = function (stacks, newItem, count) {
-      var exists;
-      angular.forEach(stacks, function (stack) {
-        if (stack.item.sid === newItem.sid) {
-          exists = stack;
-          return false;
-        }
+    if ($routeParams.id) {
+      plansService.getPlanById($routeParams.id).then(function(plan) {
+        $scope.plan = plan;
       });
-      if (!exists) {
-        stacks.push({
-          item: newItem,
-          count: count
-        });
-      } else {
-        exists.count += count;
-      }
+    }
 
-    };
-
-    var recalcRequired = function () {
-      var required = {};
-      var having = {};
-
-      angular.forEach($scope.inventory, function (stack) {
-        addToItemMap(having, stack.item, stack.count);
-      });
-
-      angular.forEach($scope.goals, function (goal) {
-        addToItemMap(this, goal.item, goal.count);
-      }, required);
-
-      angular.forEach($scope.craftingSteps, function (step) {
-        var resultSid = step.result.sid;
-        var requiredCount = required[resultSid] ? required[resultSid].count : 0;
-
-        if (step.autoScale) {
-          step.count = Math.ceil(requiredCount / step.result.size);
-        }
-
-        var resultCount = step.result.size * step.count;
-
-        var delta = resultCount - requiredCount;
-
-        if (delta >= 0) {
-          delete required[resultSid];
-          addToItemMap(having, step.result, delta);
-        } else {
-          addToItemMap(required, step.result, -resultCount);
-        }
-
-        angular.forEach(step.recipe.ingredients, function (ingredient) {
-          var ingredientItem = ingredient.items[ingredient.activeIndex];
-
-          var alreadyHaving = having[ingredientItem.sid];
-
-          var requiredCount = step.count * ingredientItem.size;
-
-          if (alreadyHaving) {
-            var countFromHaving = Math.min(requiredCount, alreadyHaving.count);
-            addToItemMap(having, ingredientItem, -countFromHaving);
-            requiredCount -= countFromHaving;
-          }
-
-          addToItemMap(required, ingredientItem, requiredCount);
-        });
-
-      });
-
-      $scope.requiredItems = required;
-      $scope.havingItems = having;
-    };
-
-    var addStep = function (step) {
-      var sameStepIndex = -1;
-      angular.forEach($scope.craftingSteps, function (existingStep, index) {
-        if (existingStep.result.sid === step.result.sid && existingStep.recipe._id === step.recipe._id) {
-          sameStepIndex = index;
-        }
-      });
-
-      if (sameStepIndex >= 0) {
-        step.count += $scope.craftingSteps[sameStepIndex].count;
-        $scope.craftingSteps.splice(sameStepIndex, 1);
-      }
-
-      $scope.craftingSteps.push(step);
-
-    };
-
-    $scope.removeCraftingStep = function (step) {
-      $scope.craftingSteps.splice($scope.craftingSteps.indexOf(step), 1);
-      recalcRequired();
-    };
-
-    $scope.completeCraftingStep = function (step) {
-      $scope.craftingSteps.splice($scope.craftingSteps.indexOf(step), 1);
-      addToItemList($scope.inventory, step.result, step.count * step.result.size);
-    };
-
-    $scope.expandRequired = function (required, event) {
+    $scope.expandRequired = function(required, event, toggleSave) {
 
       $mdDialog.show({
           controller: 'RecipeDialogCtrl',
@@ -255,13 +112,16 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
           clickOutsideToClose: true,
           fullscreen: false,
           locals: {
-            requiredData: required
+            requiredData: {
+              required: required,
+              toggleSave: !!toggleSave
+            }
           }
         })
-        .then(function (recipe) {
+        .then(function(recipe) {
           var targetItem;
 
-          angular.forEach(recipe.result.items, function (item) {
+          angular.forEach(recipe.result.items, function(item) {
             if (required.item.sid === item.sid) {
               targetItem = item;
             }
@@ -276,34 +136,145 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
             autoScale: true,
           };
 
-          addStep(step);
-
-          recalcRequired();
+          $scope.plan.addStep(step);
         });
 
     };
 
-    $scope.onChangedInventory = function (stacks) {
-      recalcRequired();
+    var autoExpand = function(plan, required) {
+      var deferred = $q.defer();
+      console.log('AutoExpend', required.item.sid);
+
+      expandRulesService.getRecipeForItem(required.item.sid).then(function(recipe) {
+        var targetItem;
+
+        angular.forEach(recipe.result.items, function(item) {
+          if (required.item.sid === item.sid) {
+            targetItem = item;
+          }
+        });
+        var repeats = Math.ceil(required.count / targetItem.size);
+        plan.addStep({
+          result: targetItem,
+          recipe: recipe,
+          count: repeats,
+          autoScale: true
+        });
+
+        var promises = [];
+        angular.forEach(recipe.ingredients, function(ingredient) {
+          var ingredientItem = ingredient.items[ingredient.activeIndex];
+          promises.push(autoExpand(plan, {
+            count: ingredientItem.size * repeats,
+            item: ingredientItem
+          }));
+        }, promises);
+
+        $q.all(promises).then(function() {
+          deferred.resolve({
+            isSuccessfull: true,
+            plan: plan
+          });
+        });
+
+      }, function() {
+        deferred.resolve({
+          isSuccessfull: false,
+          plan: plan
+        });
+      });
+
+      return deferred.promise;
     };
 
-    $scope.onChangedGoals = function (goals) {
-      recalcRequired();
+    $scope.autoExpand = function(required, event) {
+      autoExpand(angular.copy($scope.plan), required).then(function(status) {
+        if (status.isSuccessfull) {
+          $scope.plan = status.plan;
+        } else {
+          $scope.expandRequired(required, event, true);
+        }
+      });
+    };
+
+    $scope.refreshPlan = function() {
+      var result = $scope.plan.recalcRequired();
+
+      var required = [];
+      angular.forEach(result.requiredItems, function (item) {
+        this.push(item);
+      }, required);
+      $scope.requiredItems = required;
+
+      var having = [];
+      angular.forEach(result.sideResults, function (item) {
+        this.push(item);
+      }, having);
+
+      $scope.havingItems = having;
+    };
+
+    ctrl.savePlan = function(plan) {
+      var oldPlanId = plan._id;
+      plansService.savePlan(plan).then(function(plan) {
+        if (oldPlanId !== plan._id) {
+          $location.path('/plan/' + plan._id);
+        }
+      });
+    };
+
+    $scope.$watch(function() {
+      var ids = [];
+      angular.forEach($scope.plan.craftingSteps, function(step) {
+        this.push(step.result.sid + ':' + step.count);
+      }, ids);
+      return ids.sort().join('|');
+    }, function() {
+      $scope.refreshPlan();
+    });
+
+    var addToItemList = function(stacks, newItem, count) {
+      var exists;
+      var index = -1;
+      angular.forEach(stacks, function(stack, i) {
+        if (stack.item.sid === newItem.sid) {
+          exists = stack;
+          index = i;
+          return false;
+        }
+      });
+      if (!exists) {
+        stacks.push({
+          item: newItem,
+          count: count
+        });
+      } else {
+        exists.count += count;
+        if ( exists.count === 0 ) {
+          stacks.splice(index, 1);
+        }
+      }
+
+    };
+
+    $scope.completeRequired = function(required) {
+      $scope.plan.addItemToInventory(required.item, required.count);
+      addToItemList($scope.requiredItems, required.item, -required.count);
     };
   }
 ]);
 
 angular.module('app').controller('ItemSelectorCtrl', ['$scope', 'itemService',
-  function ($scope, itemService) {
+  function($scope, itemService) {
     var self = this;
     self.simulateQuery = false;
     self.isDisabled = false;
 
-    self.querySearch = function (query) {
+    self.querySearch = function(query) {
       return itemService.getItems(query);
     };
 
-    self.selectedItemChange = function (item) {
+    self.selectedItemChange = function(item) {
       self.searchText = '';
       $scope.$emit('itemAdded', item);
     };
@@ -311,92 +282,76 @@ angular.module('app').controller('ItemSelectorCtrl', ['$scope', 'itemService',
 ]);
 
 angular.module('app').controller('PlanStepsCtrl', ['$scope',
-  function ($scope) {}
+  function($scope) {}
 ]);
 
 angular.module('app').controller('PlanRequirementCtrl', ['$scope',
-  function ($scope) {}
+  function($scope) {}
 ]);
 
-angular.module('app').controller('RecipeDialogCtrl', ['$scope', 'recipeService', 'itemService', 'requiredData', '$mdDialog',
-  function ($scope, recipeService, itemService, required, $mdDialog) {
-    recipeService.getRecipes(required.item.sid).then(function (recipes) {
+angular.module('app').controller('RecipeDialogCtrl', ['$scope', 'recipeService', 'requiredData', '$mdDialog', 'expandRulesService',
+  function($scope, recipeService, requiredData, $mdDialog, expandRulesService) {
+    $scope.saveExpandRule = requiredData.toggleSave;
+    var required = requiredData.required;
+
+    recipeService.getRecipes(required.item.sid).then(function(recipes) {
       $scope.recipes = recipes;
     });
 
-    $scope.select = function (recipe) {
+    $scope.select = function(recipe) {
       $mdDialog.hide(recipe);
-    };
-  }
-]);
-
-angular.module('app').directive('recipe', ['itemService',
-  function () {
-    return {
-      restrict: 'E',
-      scope: {
-        recipe: '=data'
-      },
-      transclude: true,
-      templateUrl: './templates/directives/recipe.tpl.html',
-    };
-  }
-]);
-
-angular.module('app').directive('itemSelector', ['itemService',
-  function () {
-    return {
-      restrict: 'E',
-      transclude: true,
-      controller: 'ItemSelectorCtrl',
-      controllerAs: 'ctrl',
-      templateUrl: './templates/directives/item-selector.tpl.html',
-    };
-  }
-]);
-
-angular.module('app').directive('inventory', ['itemService',
-  function () {
-    return {
-      restrict: 'E',
-      transclude: true,
-      scope: {
-        inventory: '=model',
-        onInventoryChanged: '&callback',
-      },
-      controllerAs: 'ctrl',
-      templateUrl: './templates/directives/inventory.tpl.html',
-      link: function ($scope) {
-        $scope.inventory = $scope.inventory || [];
-
-        $scope.removeInventoryItem = function (stack) {
-          var stacks = $scope.inventory;
-          stacks.splice(stacks.indexOf(stack), 1);
-        };
-
-        $scope.$on('itemAdded', function (event, item) {
-          if (item) {
-            $scope.inventory.push({
-              item: item,
-              count: 1
-            });
-          }
-        });
-
-        $scope.$watch(function () {
-
-          var res = [];
-          angular.forEach($scope.inventory, function (stack) {
-            this.push(stack.item.sid + '-' + stack.count);
-          }, res);
-          return res.join('|');
-
-        }, function () {
-          $scope.onInventoryChanged({
-            inventory: $scope.inventory
-          });
-        });
+      if ($scope.saveExpandRule) {
+        expandRulesService.addExpandRule(required.item.sid, recipe);
       }
     };
+  }
+]);
+
+angular.module('app').controller('PlansListCtrl', ['$scope', 'plansService',
+  function($scope, plansService) {
+    plansService.getAllPlans().then(function(plans) {
+      $scope.plans = plans;
+    });
+    $scope.removePlan = function(plan) {
+      plansService.removePlan(plan._id).then(function() {
+        var index = $scope.plans.indexOf(plan);
+        $scope.plans.splice(index, 1);
+      });
+    };
+  }
+]);
+
+angular.module('app').controller('ExpandRulesCtrl', ['$scope', 'expandRulesService',
+  function($scope, expandRulesService) {
+    expandRulesService.getAllRules().then(function(rules) {
+      $scope.rules = rules;
+    });
+
+    $scope.removeRule = function(rule) {
+      expandRulesService.removeExpandRule(rule.sid).then(function() {
+        var index = $scope.rules.indexOf(rule);
+        $scope.rules.splice(index, 1);
+      });
+    };
+  }
+]);
+
+angular.module('app').filter('column', [
+
+  function() {
+    return function(items, currentIndex, totalCount) {
+      var perColumn = Math.ceil(items.length / totalCount);
+      return items.slice(currentIndex * perColumn, (currentIndex + 1) * perColumn);
+    };
+  }
+]);
+
+angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$routeParams',
+  function($scope, recipeService, $routeParams) {
+    recipeService.getRecipeById($routeParams.id).then(function (recipe) {
+      console.log(recipe);
+      $scope.recipe = recipe;
+      var ingredients = [];
+    });
   }
 ]);

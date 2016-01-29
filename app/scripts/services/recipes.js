@@ -11,6 +11,20 @@
   angular.module('app').service('recipeService', ['$q',
     function($q) {
       return {
+        getRecipeById: function(id) {
+          var deferred = $q.defer();
+          recipesDb.findOne({
+            _id: id
+          }).exec(function(err, recipe) {
+            if (err) {
+              deferred.reject(err);
+            } else {
+              deferred.resolve(recipe);
+            }
+          });
+
+          return deferred.promise;
+        },
         getRecipes: function(outputSid) {
           var query = {
             'result.items.sid': outputSid

@@ -8,8 +8,12 @@
     autoload: true
   });
 
-  angular.module('app').service('itemService', ['$q',
-    function($q) {
+  angular.module('app').service('itemService', ['$q', '$cacheFactory',
+    function($q, $cacheFactory) {
+      var itemsBySidcache = $cacheFactory('itemCache', {
+        capacity: 1000,
+      });
+
       return {
         getItems: function(name) {
           var query = {};
@@ -49,18 +53,31 @@
           return deferred.promise;
         },
         getItemBySid: function(sid) {
+          var idParts = sid.split(':');
+          if (parseInt(idParts[2]) > 32000) {
+            sid = idParts[0] + ':' + idParts[1] + ':0';
+          }
+
           var deferred = $q.defer();
 
-          itemDb.findOne({
-            'sid': sid
-          }).exec(function(err, item) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              deferred.resolve(item);
-            }
+          var item = itemsBySidcache.get(sid);
+          if (item) {
+            deferred.resolve(item);
+          } else {
 
-          });
+            itemDb.findOne({
+              'sid': sid
+            }).exec(function(err, item) {
+              if (err) {
+                deferred.reject(err);
+              } else {
+                itemsBySidcache.put(sid, item);
+                deferred.resolve(item);
+              }
+
+            });
+
+          }
           return deferred.promise;
         }
       };

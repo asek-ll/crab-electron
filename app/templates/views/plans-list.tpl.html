@@ -1,0 +1,11 @@
+<a href="#/plan"> Create New </a>
+<md-list>
+  <md-list-item class="required-item md-1-line" ng-repeat="plan in plans">
+    <div class="md-list-item-text">
+      <h3> 
+        <a href="#/plan/{{plan._id}}"> {{ plan.name }} </a>
+      </h3>
+      <md-button class="md-secondary" ng-click="removePlan(plan)">Remove</md-button>
+    </div>
+  </md-list-item>
+</md-list>

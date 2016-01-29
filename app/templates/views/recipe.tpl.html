@@ -1,0 +1,8 @@
+result: 
+<ingredient data="recipe.result"></ingredient>
+ingredients:
+<div ng-repeat="ingredient in recipe.ingredients">
+  <div> x: {{ ingredient.x }} </div>
+  <div> y: {{ ingredient.y }} </div>
+  <inventory model="ingredient.items"></inventory>
+</div>
