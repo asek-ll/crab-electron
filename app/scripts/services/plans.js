@@ -59,8 +59,6 @@
           var goalsItems = [];
           var craftedItems = [];
 
-          var nodeLevels = {};
-
           var itemCounts = {};
 
           var createNode = function (itemSid) {
@@ -79,9 +77,12 @@
           angular.forEach(_self.goals, function(goal) {
             createNode(goal.item.sid);
             goalsItems.push(goal.item.sid);
-            nodeLevels[goal.item.sid] = 1;
             countItem(goal.item.sid, goal.count);
           });
+
+          var craftable = [];
+          var maxLevel = 0;
+          var simpleLinks = []
 
           angular.forEach(_self.craftingSteps, function(step) {
             var resultSid = step.result.sid;
@@ -90,16 +91,12 @@
             createNode(step.result.sid);
             craftedItems.push(step.result.sid);
 
-            var newLevel = nodeLevels[step.result.sid] + 1;
+            craftable.push(step.result.sid);
 
             angular.forEach(step.recipe.ingredients, function(ingredient) {
               var ingredientItem = ingredient.items[ingredient.activeIndex];
 
               createNode(ingredientItem.sid);
-
-              var currentLevel = nodeLevels[ingredientItem.sid] ? nodeLevels[ingredientItem.sid] : newLevel;
-
-              nodeLevels[ingredientItem.sid] = newLevel > currentLevel ? newLevel : currentLevel;
 
               var ingredientCount = step.count * ingredientItem.size;
               countItem(ingredientItem.sid, ingredientCount);
@@ -110,8 +107,41 @@
                 amount: ingredientCount,
               });
 
+              simpleLinks.push({
+                target: step.result.sid,
+                source: ingredientItem.sid,
+              });
+
             });
           });
+
+          var nodeLevels = {};
+
+          var updateLevels = function (checkLevel) {
+            var updated = false;
+            angular.forEach(nodeLevels, function (level, sid) {
+              if (checkLevel === level) {
+
+                angular.forEach(simpleLinks, function (link) {
+                  if (link.source === sid && link.target !== sid) {
+                    nodeLevels[link.target] = level + 1;
+                    updated = true;
+                  }
+                })
+              }
+            })
+            if (updated) {
+              updateLevels(checkLevel + 1);
+            }
+          };
+
+          angular.forEach(nodes, function (sid) {
+            if (craftable.indexOf(sid) < 0) {
+              nodeLevels[sid] = 0;
+            }
+          });
+
+          updateLevels(0);
 
           return {
             nodes: nodes,

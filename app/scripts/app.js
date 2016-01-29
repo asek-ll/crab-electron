@@ -348,27 +348,64 @@ angular.module('app').filter('column', [
 
 angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$routeParams',
   function ($scope, recipeService, $routeParams) {
+    var transformIngredient2Inventory = function (ingredient) {
+      var stacks = [];
+      angular.forEach(ingredient.items, function (item) {
+        this.push({
+          item: item,
+          count: item.size
+        });
+      }, stacks);
+      return {
+        x: ingredient.x,
+        y: ingredient.y,
+        stacks: stacks
+      };
+    };
+    var transformIngredients2Inventories = function (ingredients) {
+      var inventory = [];
+      angular.forEach(ingredients, function (ingredient) {
+        this.push(transformIngredient2Inventory(ingredient));
+      }, inventory);
+
+      return inventory;
+    };
+
+    var transformInventory2Ingredient = function (inventory) {
+      var items = [];
+      angular.forEach(inventory.stacks, function (stack) {
+        this.push({
+          sid: stack.item.sid,
+          size: stack.count
+        });
+      }, items);
+
+      return {
+        x: inventory.x,
+        y: inventory.y,
+        items: items
+      };
+
+    };
+
+    var transformInventories2Ingredients = function (inventories) {
+      var ingredients = [];
+      angular.forEach(inventories, function (inventory) {
+        var ingredient = transformInventory2Ingredient(inventory);
+        if (ingredient.items.length > 0) {
+          this.push(ingredient);
+        }
+      }, ingredients);
+
+      return ingredients;
+    };
+
     recipeService.getRecipeById($routeParams.id).then(function (recipe) {
       $scope.recipe = angular.copy(recipe);
 
-      $scope.result = $scope.recipe.result.items[0];
-      console.log($scope.result);
+      $scope.result = transformIngredient2Inventory(recipe.result);
 
-      var ingredients = [];
-      angular.forEach(recipe.ingredients, function (ingredient) {
-        var stacks = [];
-        angular.forEach(ingredient.items, function (item) {
-          this.push({
-            item: item,
-            count: item.size
-          });
-        }, stacks);
-        this.push({
-          x: ingredient.x,
-          y: ingredient.y,
-          stacks: stacks
-        });
-      }, ingredients);
+      var ingredients = transformIngredients2Inventories(recipe.ingredients);
 
       $scope.ingredients = ingredients;
 
@@ -384,26 +421,9 @@ angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$rou
         });
       };
 
-      $scope.saveRecipeIngredients = function (ingredients) {
-        var newIngredients = [];
-        angular.forEach(ingredients, function (ingredient) {
-          var items = [];
-          angular.forEach(ingredient.stacks, function (stack) {
-            this.push({
-              sid: stack.item.sid,
-              size: stack.count
-            });
-          }, items);
-          if (items.length > 0) {
-            this.push({
-              x: ingredient.x,
-              y: ingredient.y,
-              items: items
-            });
-          }
-        }, newIngredients);
-
-        recipe.ingredients = newIngredients;
+      $scope.saveRecipeIngredients = function (ingredientInventories, resultInventory) {
+        recipe.ingredients = transformInventories2Ingredients(ingredientInventories);
+        recipe.result = transformInventory2Ingredient(resultInventory);
 
         recipeService.updateRecipe(recipe);
       };
