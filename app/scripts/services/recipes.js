@@ -1,41 +1,27 @@
 /* globals angular */
 (function () {
-
-  var Datastore = require('nedb');
-
-  var recipesDb = new Datastore({
-    filename: './data/recipes.db',
-    autoload: true
-  });
+  const ipcRenderer = require('electron').ipcRenderer;
 
   angular.module('app').service('recipeService', ['$q',
     function ($q) {
       return {
         updateRecipe: function (newRecipe) {
           var deferred = $q.defer();
-          recipesDb.update({
-            _id: newRecipe._id,
-          }, newRecipe, {}, function (err) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              deferred.resolve(newRecipe);
-            }
-          });
+
+          ipcRenderer.sendSync('recipes-update', newRecipe, {});
+
+          deferred.resolve(newRecipe);
 
           return deferred.promise;
         },
         getRecipeById: function (id) {
           var deferred = $q.defer();
-          recipesDb.findOne({
+
+          var recipe = ipcRenderer.sendSync('recipes-find-one', {
             _id: id
-          }).exec(function (err, recipe) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              deferred.resolve(recipe);
-            }
           });
+
+          deferred.resolve(recipe);
 
           return deferred.promise;
         },
@@ -45,13 +31,10 @@
           };
 
           var deferred = $q.defer();
-          recipesDb.find(query).exec(function (err, recipes) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              deferred.resolve(recipes);
-            }
-          });
+
+          var recipes = ipcRenderer.sendSync('recipes-find', query);
+
+          deferred.resolve(recipes);
 
           return deferred.promise;
 
