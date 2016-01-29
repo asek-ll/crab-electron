@@ -2,7 +2,7 @@
 angular.module('app', ['ngRoute', 'ngMaterial', 'ngAnimate']);
 
 angular.module('app').config(['$routeProvider',
-  function($routeProvider) {
+  function ($routeProvider) {
     var templateBase = './templates';
 
     $routeProvider.when('/', {
@@ -53,15 +53,15 @@ angular.module('app').config(['$routeProvider',
 
 angular.module('app').controller('ItemsListCtrl', ['$scope', 'itemService',
 
-  function($scope, itemService) {
+  function ($scope, itemService) {
 
-    $scope.$watch('filter.query', function(query) {
-      itemService.getItems(query).then(function(items) {
+    $scope.$watch('filter.query', function (query) {
+      itemService.getItems(query).then(function (items) {
         $scope.items = items;
       });
     });
 
-    $scope.getItemIcon = function(item) {
+    $scope.getItemIcon = function (item) {
       var nameParts = item.name.split(':');
       var modName = nameParts[0].replace('|', '_');
       return '../data/icons/' + modName + '/' + item.id + '_' + item.meta + '.png';
@@ -70,24 +70,24 @@ angular.module('app').controller('ItemsListCtrl', ['$scope', 'itemService',
 ]);
 
 angular.module('app').controller('ItemCtrl', ['$scope', '$routeParams', 'recipeService', 'itemService',
-  function($scope, $routeParams, recipeService, itemService) {
+  function ($scope, $routeParams, recipeService, itemService) {
 
-    recipeService.getRecipes($routeParams.sid).then(function(recipes) {
+    recipeService.getRecipes($routeParams.sid).then(function (recipes) {
       $scope.recipes = recipes;
     });
   }
 ]);
 
 angular.module('app').controller('ToolbarCtrl', ['$scope', '$window',
-  function($scope, $window) {
-    $scope.goBack = function() {
+  function ($scope, $window) {
+    $scope.goBack = function () {
       $window.history.back();
     };
   }
 ]);
 
 angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialog', 'plansService', '$routeParams', '$location', 'expandRulesService', '$q',
-  function($scope, itemService, $mdDialog, plansService, $routeParams, $location, expandRulesService, $q) {
+  function ($scope, itemService, $mdDialog, plansService, $routeParams, $location, expandRulesService, $q) {
     var ctrl = this;
 
     $scope.requiredItems = {};
@@ -97,12 +97,12 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
     $scope.plan = plansService.createNewPlan();
 
     if ($routeParams.id) {
-      plansService.getPlanById($routeParams.id).then(function(plan) {
+      plansService.getPlanById($routeParams.id).then(function (plan) {
         $scope.plan = plan;
       });
     }
 
-    $scope.expandRequired = function(required, event, toggleSave) {
+    $scope.expandRequired = function (required, event, toggleSave) {
 
       $mdDialog.show({
           controller: 'RecipeDialogCtrl',
@@ -118,10 +118,10 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
             }
           }
         })
-        .then(function(recipe) {
+        .then(function (recipe) {
           var targetItem;
 
-          angular.forEach(recipe.result.items, function(item) {
+          angular.forEach(recipe.result.items, function (item) {
             if (required.item.sid === item.sid) {
               targetItem = item;
             }
@@ -141,14 +141,14 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
 
     };
 
-    var autoExpand = function(plan, required) {
+    var autoExpand = function (plan, required) {
       var deferred = $q.defer();
       console.log('AutoExpend', required.item.sid);
 
-      expandRulesService.getRecipeForItem(required.item.sid).then(function(recipe) {
+      expandRulesService.getRecipeForItem(required.item.sid).then(function (recipe) {
         var targetItem;
 
-        angular.forEach(recipe.result.items, function(item) {
+        angular.forEach(recipe.result.items, function (item) {
           if (required.item.sid === item.sid) {
             targetItem = item;
           }
@@ -162,7 +162,7 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
         });
 
         var promises = [];
-        angular.forEach(recipe.ingredients, function(ingredient) {
+        angular.forEach(recipe.ingredients, function (ingredient) {
           var ingredientItem = ingredient.items[ingredient.activeIndex];
           promises.push(autoExpand(plan, {
             count: ingredientItem.size * repeats,
@@ -170,14 +170,14 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
           }));
         }, promises);
 
-        $q.all(promises).then(function() {
+        $q.all(promises).then(function () {
           deferred.resolve({
             isSuccessfull: true,
             plan: plan
           });
         });
 
-      }, function() {
+      }, function () {
         deferred.resolve({
           isSuccessfull: false,
           plan: plan
@@ -187,8 +187,8 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
       return deferred.promise;
     };
 
-    $scope.autoExpand = function(required, event) {
-      autoExpand(angular.copy($scope.plan), required).then(function(status) {
+    $scope.autoExpand = function (required, event) {
+      autoExpand(angular.copy($scope.plan), required).then(function (status) {
         if (status.isSuccessfull) {
           $scope.plan = status.plan;
         } else {
@@ -197,7 +197,7 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
       });
     };
 
-    $scope.refreshPlan = function() {
+    $scope.refreshPlan = function () {
       var result = $scope.plan.recalcRequired();
 
       var required = [];
@@ -214,29 +214,29 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
       $scope.havingItems = having;
     };
 
-    ctrl.savePlan = function(plan) {
+    ctrl.savePlan = function (plan) {
       var oldPlanId = plan._id;
-      plansService.savePlan(plan).then(function(plan) {
+      plansService.savePlan(plan).then(function (plan) {
         if (oldPlanId !== plan._id) {
           $location.path('/plan/' + plan._id);
         }
       });
     };
 
-    $scope.$watch(function() {
+    $scope.$watch(function () {
       var ids = [];
-      angular.forEach($scope.plan.craftingSteps, function(step) {
+      angular.forEach($scope.plan.craftingSteps, function (step) {
         this.push(step.result.sid + ':' + step.count);
       }, ids);
       return ids.sort().join('|');
-    }, function() {
+    }, function () {
       $scope.refreshPlan();
     });
 
-    var addToItemList = function(stacks, newItem, count) {
+    var addToItemList = function (stacks, newItem, count) {
       var exists;
       var index = -1;
-      angular.forEach(stacks, function(stack, i) {
+      angular.forEach(stacks, function (stack, i) {
         if (stack.item.sid === newItem.sid) {
           exists = stack;
           index = i;
@@ -250,14 +250,14 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
         });
       } else {
         exists.count += count;
-        if ( exists.count === 0 ) {
+        if (exists.count === 0) {
           stacks.splice(index, 1);
         }
       }
 
     };
 
-    $scope.completeRequired = function(required) {
+    $scope.completeRequired = function (required) {
       $scope.plan.addItemToInventory(required.item, required.count);
       addToItemList($scope.requiredItems, required.item, -required.count);
     };
@@ -265,16 +265,16 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
 ]);
 
 angular.module('app').controller('ItemSelectorCtrl', ['$scope', 'itemService',
-  function($scope, itemService) {
+  function ($scope, itemService) {
     var self = this;
     self.simulateQuery = false;
     self.isDisabled = false;
 
-    self.querySearch = function(query) {
+    self.querySearch = function (query) {
       return itemService.getItems(query);
     };
 
-    self.selectedItemChange = function(item) {
+    self.selectedItemChange = function (item) {
       self.searchText = '';
       $scope.$emit('itemAdded', item);
     };
@@ -282,23 +282,23 @@ angular.module('app').controller('ItemSelectorCtrl', ['$scope', 'itemService',
 ]);
 
 angular.module('app').controller('PlanStepsCtrl', ['$scope',
-  function($scope) {}
+  function ($scope) {}
 ]);
 
 angular.module('app').controller('PlanRequirementCtrl', ['$scope',
-  function($scope) {}
+  function ($scope) {}
 ]);
 
 angular.module('app').controller('RecipeDialogCtrl', ['$scope', 'recipeService', 'requiredData', '$mdDialog', 'expandRulesService',
-  function($scope, recipeService, requiredData, $mdDialog, expandRulesService) {
+  function ($scope, recipeService, requiredData, $mdDialog, expandRulesService) {
     $scope.saveExpandRule = requiredData.toggleSave;
     var required = requiredData.required;
 
-    recipeService.getRecipes(required.item.sid).then(function(recipes) {
+    recipeService.getRecipes(required.item.sid).then(function (recipes) {
       $scope.recipes = recipes;
     });
 
-    $scope.select = function(recipe) {
+    $scope.select = function (recipe) {
       $mdDialog.hide(recipe);
       if ($scope.saveExpandRule) {
         expandRulesService.addExpandRule(required.item.sid, recipe);
@@ -308,12 +308,12 @@ angular.module('app').controller('RecipeDialogCtrl', ['$scope', 'recipeService',
 ]);
 
 angular.module('app').controller('PlansListCtrl', ['$scope', 'plansService',
-  function($scope, plansService) {
-    plansService.getAllPlans().then(function(plans) {
+  function ($scope, plansService) {
+    plansService.getAllPlans().then(function (plans) {
       $scope.plans = plans;
     });
-    $scope.removePlan = function(plan) {
-      plansService.removePlan(plan._id).then(function() {
+    $scope.removePlan = function (plan) {
+      plansService.removePlan(plan._id).then(function () {
         var index = $scope.plans.indexOf(plan);
         $scope.plans.splice(index, 1);
       });
@@ -322,13 +322,13 @@ angular.module('app').controller('PlansListCtrl', ['$scope', 'plansService',
 ]);
 
 angular.module('app').controller('ExpandRulesCtrl', ['$scope', 'expandRulesService',
-  function($scope, expandRulesService) {
-    expandRulesService.getAllRules().then(function(rules) {
+  function ($scope, expandRulesService) {
+    expandRulesService.getAllRules().then(function (rules) {
       $scope.rules = rules;
     });
 
-    $scope.removeRule = function(rule) {
-      expandRulesService.removeExpandRule(rule.sid).then(function() {
+    $scope.removeRule = function (rule) {
+      expandRulesService.removeExpandRule(rule.sid).then(function () {
         var index = $scope.rules.indexOf(rule);
         $scope.rules.splice(index, 1);
       });
@@ -338,8 +338,8 @@ angular.module('app').controller('ExpandRulesCtrl', ['$scope', 'expandRulesServi
 
 angular.module('app').filter('column', [
 
-  function() {
-    return function(items, currentIndex, totalCount) {
+  function () {
+    return function (items, currentIndex, totalCount) {
       var perColumn = Math.ceil(items.length / totalCount);
       return items.slice(currentIndex * perColumn, (currentIndex + 1) * perColumn);
     };
@@ -347,11 +347,66 @@ angular.module('app').filter('column', [
 ]);
 
 angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$routeParams',
-  function($scope, recipeService, $routeParams) {
+  function ($scope, recipeService, $routeParams) {
     recipeService.getRecipeById($routeParams.id).then(function (recipe) {
-      console.log(recipe);
-      $scope.recipe = recipe;
+      $scope.recipe = angular.copy(recipe);
+
+      $scope.result = $scope.recipe.result.items[0];
+      console.log($scope.result);
+
       var ingredients = [];
+      angular.forEach(recipe.ingredients, function (ingredient) {
+        var stacks = [];
+        angular.forEach(ingredient.items, function (item) {
+          this.push({
+            item: item,
+            count: item.size
+          });
+        }, stacks);
+        this.push({
+          x: ingredient.x,
+          y: ingredient.y,
+          stacks: stacks
+        });
+      }, ingredients);
+
+      $scope.ingredients = ingredients;
+
+      $scope.removeIngredient = function (ingredient) {
+        $scope.ingredients.splice($scope.ingredients.indexOf(ingredient), 1);
+      };
+
+      $scope.addNewIngredient = function () {
+        $scope.ingredients.push({
+          x: 0,
+          y: 0,
+          stacks: []
+        });
+      };
+
+      $scope.saveRecipeIngredients = function (ingredients) {
+        var newIngredients = [];
+        angular.forEach(ingredients, function (ingredient) {
+          var items = [];
+          angular.forEach(ingredient.stacks, function (stack) {
+            this.push({
+              sid: stack.item.sid,
+              size: stack.count
+            });
+          }, items);
+          if (items.length > 0) {
+            this.push({
+              x: ingredient.x,
+              y: ingredient.y,
+              items: items
+            });
+          }
+        }, newIngredients);
+
+        recipe.ingredients = newIngredients;
+
+        recipeService.updateRecipe(recipe);
+      };
     });
   }
 ]);

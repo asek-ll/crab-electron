@@ -47,18 +47,20 @@ angular.module('app').directive('itemStack', ['itemService',
       transclude: true,
       templateUrl: './templates/directives/item-stack.tpl.html',
       link: function(scope, element) {
-        var item = scope.item;
-        var sid = scope.sid;
+        scope.$watchGroup(['sid', 'item'], function () {
+          var item = scope.item;
+          var sid = scope.sid;
 
-        scope.itemIcon = getItemIcon;
+          scope.itemIcon = getItemIcon;
 
-        if (item) {
-          scope.item = item;
-        } else if (sid) {
-          itemService.getItemBySid(sid).then(function(item) {
+          if (item) {
             scope.item = item;
-          });
-        }
+          } else if (sid) {
+            itemService.getItemBySid(sid).then(function(item) {
+              scope.item = item;
+            });
+          }
+        });
       },
     };
   }

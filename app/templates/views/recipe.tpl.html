@@ -1,8 +1,21 @@
 result: 
-<ingredient data="recipe.result"></ingredient>
-ingredients:
-<div ng-repeat="ingredient in recipe.ingredients">
-  <div> x: {{ ingredient.x }} </div>
-  <div> y: {{ ingredient.y }} </div>
-  <inventory model="ingredient.items"></inventory>
+<div class="md-1-line goal">
+  <div flex="initial" class="md-display-1 goal-count">
+    <input ng-model="result.size" type="number">
+  </div>
+  <span>
+    <item-stack sid="result.sid"></item-stack>
+  </span>
 </div>
+ingredients:
+<div ng-repeat="ingredient in ingredients">
+  <div>
+    <div> x: {{ ingredient.x }} </div>
+    <div> y: {{ ingredient.y }} </div>
+    <inventory model="ingredient.stacks"></inventory>
+  </div>
+
+  <md-button ng-click="removeIngredient(ingredient)">Remove</md-button>
+</div>
+<md-button ng-click="addNewIngredient()">Add new Ingredient</md-button>
+<md-button ng-click="saveRecipeIngredients(ingredients)">Save recipe</md-button>
