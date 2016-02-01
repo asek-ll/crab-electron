@@ -45,6 +45,12 @@ angular.module('app').config(['$routeProvider',
       controllerAs: 'ctrl',
     });
 
+    $routeProvider.when('/recipe/new/:itemSid', {
+      templateUrl: templateBase + '/views/recipe.tpl.html',
+      controller: 'RecipeCtrl',
+      controllerAs: 'ctrl',
+    });
+
     $routeProvider.otherwise({
       redirectTo: '/'
     });
@@ -69,12 +75,30 @@ angular.module('app').controller('ItemsListCtrl', ['$scope', 'itemService',
   }
 ]);
 
-angular.module('app').controller('ItemCtrl', ['$scope', '$routeParams', 'recipeService', 'itemService',
-  function ($scope, $routeParams, recipeService, itemService) {
+angular.module('app').controller('ItemCtrl', ['$scope', '$routeParams', 'recipeService', 'itemService', 'expandRulesService',
+  function ($scope, $routeParams, recipeService, itemService, expandRulesService) {
 
+    $scope.itemSid = $routeParams.sid;
     recipeService.getRecipes($routeParams.sid).then(function (recipes) {
       $scope.recipes = recipes;
     });
+
+    expandRulesService.getRecipeForItem($scope.itemSid).then(function (recipe) {
+      $scope.expandRuleRecipe = recipe;
+    });
+
+    $scope.clearAutoExpandRule = function (sid) {
+      expandRulesService.removeExpandRule(sid).then(function () {
+        $scope.expandRuleRecipe = null;
+      });
+    };
+
+    $scope.setAutoExpandRule = function (sid, recipe) {
+      expandRulesService.addExpandRule(sid, recipe).then(function () {
+        $scope.expandRuleRecipe = recipe;
+      });
+    };
+
   }
 ]);
 
@@ -400,7 +424,7 @@ angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$rou
       return ingredients;
     };
 
-    recipeService.getRecipeById($routeParams.id).then(function (recipe) {
+    var initScope = function (recipe) {
       $scope.recipe = angular.copy(recipe);
 
       $scope.result = transformIngredient2Inventory(recipe.result);
@@ -425,8 +449,36 @@ angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$rou
         recipe.ingredients = transformInventories2Ingredients(ingredientInventories);
         recipe.result = transformInventory2Ingredient(resultInventory);
 
-        recipeService.updateRecipe(recipe);
+        if (recipe._id) {
+          recipeService.updateRecipe(recipe);
+        } else {
+          recipeService.createRecipe(recipe).then(function (createdRecipe) {
+            recipe = createdRecipe;
+          });
+        }
       };
-    });
+    };
+
+    if ($routeParams.id) {
+      recipeService.getRecipeById($routeParams.id).then(initScope);
+    } else if ($routeParams.itemSid) {
+      var recipe = {
+        result: {
+          x: 0,
+          y: 0,
+          items: [
+            {
+              sid: $routeParams.itemSid,
+              size: 1
+            }
+          ]
+        },
+        ingredients: [],
+        others:[],
+        handlerName:'Custom Crafting'
+      }
+      initScope(recipe);
+    }
+
   }
 ]);

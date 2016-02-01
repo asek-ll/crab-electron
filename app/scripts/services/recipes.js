@@ -20,6 +20,19 @@
 
           return deferred.promise;
         },
+        createRecipe: function (newRecipe) {
+          var deferred = $q.defer();
+
+          getData('recipes-insert', {
+            data: newRecipe,
+            options: {}
+          }, function (createdRecipe) {
+            console.log(createdRecipe);
+            deferred.resolve(createdRecipe);
+          });
+
+          return deferred.promise;
+        },
         getRecipeById: function (id) {
           var deferred = $q.defer();
 

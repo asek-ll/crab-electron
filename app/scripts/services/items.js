@@ -11,16 +11,12 @@
       return {
         getItems: function (name) {
           var query = {};
-          if (name && name !== '') {
-            query.displayName = {
-              $regex: new RegExp(name, 'i')
-            };
-          }
 
           var deferred = $q.defer();
 
           getData('items-find', {
-            query: query,
+            query: {},
+            name: name,
             limit: 50,
           }, function (items) {
             deferred.resolve(items);

@@ -31,7 +31,11 @@
               sid: sid
             }
           }, function (expandRule) {
-            deferred.resolve(angular.fromJson(expandRule.recipe));
+            if (expandRule) {
+              deferred.resolve(angular.fromJson(expandRule.recipe));
+            } else {
+              deferred.reject();
+            }
           });
 
           return deferred.promise;
@@ -39,10 +43,16 @@
 
         addExpandRule: function (sid, recipe) {
           var deferred = $q.defer();
-          getData('auto-expands-insert', {
+          getData('auto-expands-update', {
+            query: {
+              sid: sid
+            },
             data: {
               sid: sid,
               recipe: angular.toJson(recipe)
+            },
+            options: {
+              upsert: true
             }
           }, function (rule) {
             deferred.resolve(rule);

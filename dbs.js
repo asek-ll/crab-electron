@@ -45,10 +45,18 @@ module.exports = function () {
     });
 
     registerHandler(dbName + '-find', function (data, callback) {
-      logger.debug('trigger', dbName + '-find', arguments);
+      logger.debug('trigger', dbName + '-find', data);
 
       data.options = data.options || {};
+
+      if (data.name && data.name !== '') {
+        data.query.displayName = {
+          $regex: new RegExp(data.name, 'i')
+        };
+      }
+
       var query = db.find(data.query);
+
       if (data.limit) {
         query = query.limit(data.limit);
       }
@@ -57,25 +65,25 @@ module.exports = function () {
 
     logger.debug(dbName + '-find-one');
     registerHandler(dbName + '-find-one', function (data, callback) {
-      logger.debug('trigger', dbName + '-find-one', arguments);
+      logger.debug('trigger', dbName + '-find-one', data);
       db.findOne(data.query).exec(callback);
     });
 
     logger.debug(dbName + '-update');
     registerHandler(dbName + '-update', function (data, callback) {
-      logger.debug('trigger', dbName + '-update', arguments);
+      logger.debug('trigger', dbName + '-update', data);
       db.update(data.query, data.data, data.options, callback);
     });
 
     logger.debug(dbName + '-insert');
     registerHandler(dbName + '-insert', function (data, callback) {
-      logger.debug('trigger', dbName + '-update', arguments);
+      logger.debug('trigger', dbName + '-update', data);
       db.insert(data.data, callback);
     });
 
     logger.debug(dbName + '-remove');
     registerHandler(dbName + '-remove', function (data, callback) {
-      logger.debug('trigger', dbName + '-update', arguments);
+      logger.debug('trigger', dbName + '-update', data);
       db.remove(data.query, callback);
     });
   });
