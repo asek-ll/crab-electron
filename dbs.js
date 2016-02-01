@@ -17,6 +17,25 @@ const databases = [
 
 module.exports = function () {
 
+  var handlers = {};
+
+  var registerHandler = function (requestKey, handler) {
+    handlers[requestKey] = handler;
+  };
+
+  ipcMain.on('requestData', function (event, uid, key, data) {
+    var handler = handlers[key];
+    if (handler) {
+
+      handler(data, function (err, result) {
+        event.sender.send('requestedData', uid, result);
+      });
+
+    } else {
+      event.sender.send('requestedData', uid);
+    }
+  });
+
   databases.forEach(function (dbName) {
     logger.debug('load database', dbName)
     const db = new Datastore({
@@ -24,35 +43,27 @@ module.exports = function () {
       autoload: true
     });
 
-    logger.debug(dbName + '-find');
-    ipcMain.on(dbName + '-find', function (e, query, options, callback) {
+    registerHandler(dbName + '-find', function (data, callback) {
       logger.debug('trigger', dbName + '-find', arguments);
 
-      options = options || {};
-      var query = db.find(query);
-      if (options.limit) {
-        query = query.limit(options.limit);
+      data.options = data.options || {};
+      var query = db.find(data.query);
+      if (data.limit) {
+        query = query.limit(data.limit);
       }
-      query.exec(function (err, recipes) {
-        e.returnValue = recipes;
-        callback(err, recipes);
-      });
+      query.exec(callback);
     });
 
     logger.debug(dbName + '-find-one');
-    ipcMain.on(dbName + '-find-one', function (e, query) {
+    registerHandler(dbName + '-find-one', function (data, callback) {
       logger.debug('trigger', dbName + '-find-one', arguments);
-      db.findOne(query).exec(function (err, recipe) {
-        e.returnValue = recipe;
-      });
+      db.findOne(data.query).exec(callback);
     });
 
     logger.debug(dbName + '-find-update');
-    ipcMain.on(dbName + '-update', function (e, query, data, options) {
+    registerHandler(dbName + '-update', function (data, callback) {
       logger.debug('trigger', dbName + '-update', arguments);
-      db.update(query, data, options).exec(function (err) {
-        e.returnValue = err;
-      });
+      db.update(data.query, data.data, data.options).exec(callback);
     });
   });
 

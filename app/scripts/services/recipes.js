@@ -1,6 +1,6 @@
 /* globals angular */
 (function () {
-  const ipcRenderer = require('electron').ipcRenderer;
+  var getData = require('./data-transfer').requestData;
 
   angular.module('app').service('recipeService', ['$q',
     function ($q) {
@@ -8,20 +8,28 @@
         updateRecipe: function (newRecipe) {
           var deferred = $q.defer();
 
-          ipcRenderer.sendSync('recipes-update', newRecipe, {});
-
-          deferred.resolve(newRecipe);
+          getData('recipes-update', {
+            query: {
+              _id: newRecipe._id,
+            },
+            data: newRecipe,
+            options: {}
+          }, function () {
+            deferred.resolve(newRecipe);
+          });
 
           return deferred.promise;
         },
         getRecipeById: function (id) {
           var deferred = $q.defer();
 
-          var recipe = ipcRenderer.sendSync('recipes-find-one', {
-            _id: id
+          getData('recipes-find-one', {
+            query: {
+              _id: id
+            }
+          }, function (recipe) {
+            deferred.resolve(recipe);
           });
-
-          deferred.resolve(recipe);
 
           return deferred.promise;
         },
@@ -32,9 +40,9 @@
 
           var deferred = $q.defer();
 
-          var recipes = ipcRenderer.sendSync('recipes-find', query);
-
-          deferred.resolve(recipes);
+          getData('recipes-find', {query: query}, function (recipes) {
+            deferred.resolve(recipes);
+          });
 
           return deferred.promise;
 

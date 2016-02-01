@@ -1,6 +1,6 @@
 /* globals angular */
 (function () {
-  const ipcRenderer = require('electron').ipcRenderer;
+  var getData = require('./data-transfer').requestData;
 
   angular.module('app').service('itemService', ['$q', '$cacheFactory',
     function ($q, $cacheFactory) {
@@ -19,26 +19,12 @@
 
           var deferred = $q.defer();
 
-          const items = ipcRenderer.sendSync('items-find', query, {
-            limit: 50
-          }, function () {
-            console.log('callback test');
+          getData('items-find', {
+            query: query,
+            limit: 50,
+          }, function (items) {
+            deferred.resolve(items);
           });
-
-          deferred.resolve(items);
-
-          return deferred.promise;
-        },
-
-        getItemsBySids: function (sids) {
-          var deferred = $q.defer();
-
-          const items = ipcRenderer.sendSync('items-find', {
-            'sid': {
-              $in: sids
-            }
-          });
-          deferred.resolve(items);
 
           return deferred.promise;
         },
@@ -55,11 +41,14 @@
             deferred.resolve(item);
           } else {
 
-            item = ipcRenderer.sendSync('items-find-one', {
-              'sid': sid
+            getData('items-find-one', {
+              query: {
+                'sid': sid
+              }
+            }, function (item) {
+              itemsBySidcache.put(sid, item);
+              deferred.resolve(item);
             });
-            itemsBySidcache.put(sid, item);
-            deferred.resolve(item);
           }
           return deferred.promise;
         }
