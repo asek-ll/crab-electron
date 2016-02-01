@@ -1,79 +1,65 @@
 /* globals angular */
-(function() {
+(function () {
 
-  var Datastore = require('nedb');
-
-  var expandRulesDb = new Datastore({
-    filename: './data/auto-expands.db',
-    autoload: true
-  });
+  var getData = require('./data-transfer').requestData;
 
   angular.module('app').service('expandRulesService', ['$q',
-    function($q) {
+    function ($q) {
       return {
-        getAllRules: function() {
+        getAllRules: function () {
 
           var deferred = $q.defer();
-          expandRulesDb.find().exec(function(err, rules) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              var recipes = [];
-              angular.forEach(rules, function(rule) {
-                recipes.push({
-                  sid: rule.sid,
-                  recipe: angular.fromJson(rule.recipe)
-                });
+          getData('auto-expands-find', {}, function (rules) {
+            var recipes = [];
+            angular.forEach(rules, function (rule) {
+              recipes.push({
+                sid: rule.sid,
+                recipe: angular.fromJson(rule.recipe)
               });
-              deferred.resolve(recipes);
-            }
+            });
+            deferred.resolve(recipes);
           });
 
           return deferred.promise;
         },
 
-        getRecipeForItem: function(sid) {
+        getRecipeForItem: function (sid) {
 
           var deferred = $q.defer();
-          expandRulesDb.findOne({
-            sid: sid
-          }).exec(function(err, expandRule) {
-            if (err || !expandRule) {
-              deferred.reject(err);
-            } else {
-              deferred.resolve(angular.fromJson(expandRule.recipe));
+          getData('auto-expands-find-one', {
+            query: {
+              sid: sid
             }
+          }, function (expandRule) {
+            deferred.resolve(angular.fromJson(expandRule.recipe));
           });
 
           return deferred.promise;
         },
 
-        addExpandRule: function(sid, recipe) {
+        addExpandRule: function (sid, recipe) {
           var deferred = $q.defer();
-          expandRulesDb.insert({
-            sid: sid,
-            recipe: angular.toJson(recipe)
-          }, function(err, rule) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              deferred.resolve(rule);
+          getData('auto-expands-insert', {
+            data: {
+              sid: sid,
+              recipe: angular.toJson(recipe)
             }
+          }, function (rule) {
+            deferred.resolve(rule);
           });
           return deferred.promise;
         },
 
-        removeExpandRule: function(sid) {
+        removeExpandRule: function (sid) {
           var deferred = $q.defer();
-          expandRulesDb.remove({
-            sid: sid,
-          }, function(err) {
-            if (err) {
-              deferred.reject(err);
-            } else {
+          getData('auto-expands-remove', {
+              query: {
+                sid: sid
+              }
+            },
+            function () {
               deferred.resolve();
-            }
-          });
+            });
           return deferred.promise;
         },
 

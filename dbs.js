@@ -12,7 +12,8 @@ logger.setLevel('TRACE');
 const databases = [
   'recipes',
   'items',
-  //'plans'
+  'plans',
+  'auto-expands',
 ];
 
 module.exports = function () {
@@ -60,10 +61,22 @@ module.exports = function () {
       db.findOne(data.query).exec(callback);
     });
 
-    logger.debug(dbName + '-find-update');
+    logger.debug(dbName + '-update');
     registerHandler(dbName + '-update', function (data, callback) {
       logger.debug('trigger', dbName + '-update', arguments);
-      db.update(data.query, data.data, data.options).exec(callback);
+      db.update(data.query, data.data, data.options, callback);
+    });
+
+    logger.debug(dbName + '-insert');
+    registerHandler(dbName + '-insert', function (data, callback) {
+      logger.debug('trigger', dbName + '-update', arguments);
+      db.insert(data.data, callback);
+    });
+
+    logger.debug(dbName + '-remove');
+    registerHandler(dbName + '-remove', function (data, callback) {
+      logger.debug('trigger', dbName + '-update', arguments);
+      db.remove(data.query, callback);
     });
   });
 
