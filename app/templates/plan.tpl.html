@@ -65,17 +65,19 @@
 </md-toolbar>
 <md-content>
   <md-list>
-    <md-list-item class="steps md-1-line" layout="row" ng-repeat="step in plan.craftingSteps">
-      <div class="md-display-1" flex="initial">{{ step.count }}x</div>
-      <div flex>
-        <recipe data="step.recipe"></recipe>
-      </div>
-      <div flex="initial">
-        <md-checkbox ng-model="step.autoScale" aria-label="Auto scale"></md-checkbox>
-        <md-button ng-click="plan.removeStep(step)">Remove</md-button>
-      </div>
-      <md-divider inset></md-divider>
-    </md-list-item>
+    <md-virtual-repeat-container style="height:500px">
+      <md-list-item class="steps md-1-line" layout="row" md-virtual-repeat="step in plan.craftingSteps">
+        <div class="md-display-1" flex="initial">{{ step.count }}x</div>
+        <div flex>
+          <recipe data="step.recipe"></recipe>
+        </div>
+        <div flex="initial">
+          <md-checkbox ng-model="step.autoScale" aria-label="Auto scale"></md-checkbox>
+          <md-button ng-click="plan.removeStep(step)">Remove</md-button>
+        </div>
+        <md-divider inset></md-divider>
+      </md-list-item>
+    </md-virtual-repeat-container>
   </md-list>
 </md-content>
 

@@ -1,4 +1,4 @@
 <a href="#/item/{{ item.sid }}" class="item-stack" title="{{ item.displayName + ' ' + item.sid}}">
   <img ng-src="{{ itemIcon(item) }}" />
-  <span class="stack-size">{{ size }}</span>
+  <span class="stack-size">{{ size | itemNumber }}</span>
 </a>

@@ -204,7 +204,6 @@
           };
         },
         addStep: function (step) {
-          console.log('add step', step.result.sid, 'by', step.recipe._id);
           var _self = this;
           var sameStepIndex = -1;
           angular.forEach(_self.craftingSteps, function (existingStep, index) {

@@ -482,3 +482,9 @@ angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$rou
 
   }
 ]);
+
+angular.module('app').filter('itemNumber', function () {
+  return function (count) {
+    return count >= 1000000 ? Math.ceil(count / 1000000) + 'M' : (count >= 1000 ? Math.ceil(count / 1000) + 'K' : count);
+  }
+});
