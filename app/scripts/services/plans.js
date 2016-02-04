@@ -1,17 +1,12 @@
 /* globals angular */
-(function() {
+(function () {
 
-  var Datastore = require('nedb');
-
-  var plansDb = new Datastore({
-    filename: './data/plans.db',
-    autoload: true
-  });
+  var getData = require('./data-adapter').requestData;
 
   angular.module('app').service('plansService', ['$q',
-    function($q) {
+    function ($q) {
 
-      var addToItemMap = function(items, item, count) {
+      var addToItemMap = function (items, item, count) {
         if (count === 0) {
           return;
         }
@@ -29,9 +24,9 @@
         }
       };
 
-      var addToItemList = function(stacks, newItem, count) {
+      var addToItemList = function (stacks, newItem, count) {
         var exists;
-        angular.forEach(stacks, function(stack) {
+        angular.forEach(stacks, function (stack) {
           if (stack.item.sid === newItem.sid) {
             exists = stack;
             return false;
@@ -62,19 +57,19 @@
           var itemCounts = {};
 
           var createNode = function (itemSid) {
-            if ( nodes.indexOf(itemSid) < 0 ) {
+            if (nodes.indexOf(itemSid) < 0) {
               nodes.push(itemSid);
             }
           };
 
           var countItem = function (sid, count) {
-            if ( !itemCounts[sid] ) {
+            if (!itemCounts[sid]) {
               itemCounts[sid] = 0;
             }
             itemCounts[sid] += count;
           };
 
-          angular.forEach(_self.goals, function(goal) {
+          angular.forEach(_self.goals, function (goal) {
             createNode(goal.item.sid);
             goalsItems.push(goal.item.sid);
             countItem(goal.item.sid, goal.count);
@@ -84,7 +79,7 @@
           var maxLevel = 0;
           var simpleLinks = []
 
-          angular.forEach(_self.craftingSteps, function(step) {
+          angular.forEach(_self.craftingSteps, function (step) {
             var resultSid = step.result.sid;
             var resultCount = step.result.size * step.count;
 
@@ -93,7 +88,7 @@
 
             craftable.push(step.result.sid);
 
-            angular.forEach(step.recipe.ingredients, function(ingredient) {
+            angular.forEach(step.recipe.ingredients, function (ingredient) {
               var ingredientItem = ingredient.items[ingredient.activeIndex];
 
               createNode(ingredientItem.sid);
@@ -153,20 +148,20 @@
           };
 
         },
-        recalcRequired: function() {
+        recalcRequired: function () {
           var _self = this;
           var required = {};
           var having = {};
 
-          angular.forEach(_self.inventory, function(stack) {
+          angular.forEach(_self.inventory, function (stack) {
             addToItemMap(having, stack.item, stack.count);
           });
 
-          angular.forEach(_self.goals, function(goal) {
+          angular.forEach(_self.goals, function (goal) {
             addToItemMap(this, goal.item, goal.count);
           }, required);
 
-          angular.forEach(_self.craftingSteps, function(step) {
+          angular.forEach(_self.craftingSteps, function (step) {
             var resultSid = step.result.sid;
             var requiredCount = required[resultSid] ? required[resultSid].count : 0;
 
@@ -185,7 +180,7 @@
               addToItemMap(required, step.result, -resultCount);
             }
 
-            angular.forEach(step.recipe.ingredients, function(ingredient) {
+            angular.forEach(step.recipe.ingredients, function (ingredient) {
               var ingredientItem = ingredient.items[ingredient.activeIndex];
 
               var alreadyHaving = having[ingredientItem.sid];
@@ -208,11 +203,11 @@
             sideResults: having
           };
         },
-        addStep: function(step) {
+        addStep: function (step) {
           console.log('add step', step.result.sid, 'by', step.recipe._id);
           var _self = this;
           var sameStepIndex = -1;
-          angular.forEach(_self.craftingSteps, function(existingStep, index) {
+          angular.forEach(_self.craftingSteps, function (existingStep, index) {
             if (existingStep.result.sid === step.result.sid && existingStep.recipe._id === step.recipe._id) {
               sameStepIndex = index;
             }
@@ -224,14 +219,14 @@
           }
           _self.craftingSteps.push(step);
         },
-        removeStep: function(step) {
+        removeStep: function (step) {
           this.craftingSteps.splice(this.craftingSteps.indexOf(step), 1);
         },
-        addItemToInventory: function(item, count) {
+        addItemToInventory: function (item, count) {
           var _self = this;
           addToItemList(_self.inventory, item, count);
         },
-        toData: function() {
+        toData: function () {
           return {
             name: this.name,
             data: angular.toJson({
@@ -244,7 +239,7 @@
       };
 
       return {
-        createNewPlan: function() {
+        createNewPlan: function () {
           return angular.extend(Object.create(plan$), {
             inventory: [],
             craftingSteps: [],
@@ -252,83 +247,74 @@
             name: 'Untitled Plan',
           });
         },
-        getAllPlans: function() {
+        getAllPlans: function () {
 
           var deferred = $q.defer();
-          plansDb.find().exec(function(err, plans) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              deferred.resolve(plans);
-            }
+          getData('plans-find', {}, function (plans) {
+            deferred.resolve(plans);
           });
 
           return deferred.promise;
         },
 
-        getPlanById: function(id) {
+        getPlanById: function (id) {
 
           var deferred = $q.defer();
-          plansDb.findOne({
-            _id: id
-          }).exec(function(err, plan) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              var planData = angular.fromJson(plan.data);
-              planData.name = plan.name;
-              planData._id = plan._id;
-              deferred.resolve(angular.extend(Object.create(plan$), planData));
+          getData('plans-find-one', {
+            query: {
+              _id: id
             }
+          }, function (plan) {
+            var planData = angular.fromJson(plan.data);
+            planData.name = plan.name;
+            planData._id = plan._id;
+            deferred.resolve(angular.extend(Object.create(plan$), planData));
           });
 
           return deferred.promise;
         },
 
-        createPlan: function(plan) {
+        createPlan: function (plan) {
           var deferred = $q.defer();
-          plansDb.insert(plan.toData(), function(err, newPlan) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              plan._id = newPlan._id;
-              deferred.resolve(plan);
-            }
+          getData('plans-insert', {
+            data: plan.toData(),
+            options: {}
+          }, function (newPlan) {
+            plan._id = newPlan._id;
+            deferred.resolve(plan);
           });
           return deferred.promise;
         },
 
-        updatePlan: function(id, plan) {
+        updatePlan: function (id, plan) {
           var deferred = $q.defer();
-          plansDb.update({
-            _id: id
-          }, plan.toData(), {}, function(err) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              deferred.resolve(plan);
-            }
+          getData('plans-update', {
+            query: {
+              _id: id
+            },
+            data: plan.toData(),
+            options: {}
+          }, function () {
+            deferred.resolve(plan);
           });
           return deferred.promise;
         },
 
-        savePlan: function(plan) {
+        savePlan: function (plan) {
           if (!plan._id) {
             return this.createPlan(plan);
           }
           return this.updatePlan(plan._id, plan);
         },
 
-        removePlan: function(id) {
+        removePlan: function (id) {
           var deferred = $q.defer();
-          plansDb.remove({
-            _id: id,
-          }, function(err) {
-            if (err) {
-              deferred.reject(err);
-            } else {
-              deferred.resolve();
+          getData('plans-remove', {
+            query: {
+              _id: id,
             }
+          }, function () {
+            deferred.resolve();
           });
           return deferred.promise;
         },

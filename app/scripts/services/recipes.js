@@ -1,6 +1,6 @@
 /* globals angular */
 (function () {
-  var getData = require('./data-transfer').requestData;
+  var getData = require('./data-adapter').requestData;
 
   angular.module('app').service('recipeService', ['$q',
     function ($q) {

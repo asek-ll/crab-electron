@@ -40,7 +40,7 @@ module.exports = function () {
   databases.forEach(function (dbName) {
     logger.debug('load database', dbName)
     const db = new Datastore({
-      filename: './data/' + dbName + '.db',
+      filename: './data_sets/data/' + dbName + '.db',
       autoload: true
     });
 

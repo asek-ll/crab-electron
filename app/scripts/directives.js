@@ -11,7 +11,7 @@ var getItemIcon = function(item) {
     path += '_' + parts[2];
   }
 
-  return '../data/icons/' + path + '.png';
+  return '../data_sets/data/icons/' + path + '.png';
 };
 
 angular.module('app').directive('ingredient', ['itemService', '$compile',
