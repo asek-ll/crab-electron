@@ -62,3 +62,36 @@
   stroke: #999;
   stroke-opacity: .6;
 }
+
+.link .link-text {
+  display: none;
+}
+
+.hover-link {
+  stroke-width: 5px;
+}
+
+.link .hover-link {
+  display: block;
+}
+
+.target-hover-link {
+  stroke: #F00;
+}
+
+.source-hover-link {
+  stroke: #0F0;
+}
+
+.node text {
+  visibility: hidden;
+}
+
+.node-hovered text {
+  visibility: visible;
+}
+
+craft-graph text {
+  font-size: 20px;
+  font-weight: bold;
+}

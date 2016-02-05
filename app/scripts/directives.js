@@ -1,7 +1,7 @@
 /* globals angular */
-var d3 = require('../bower_components/d3/d3.js');
+//var d3 = require('../bower_components/d3/d3.js');
 
-var getItemIcon = function(item) {
+var getItemIcon = function (item) {
   if (!item) {
     return '';
   }
@@ -15,7 +15,7 @@ var getItemIcon = function(item) {
 };
 
 angular.module('app').directive('ingredient', ['itemService', '$compile',
-  function(itemService, $compile) {
+  function (itemService, $compile) {
     return {
       restrict: 'E',
       scope: {
@@ -23,11 +23,11 @@ angular.module('app').directive('ingredient', ['itemService', '$compile',
       },
       transclude: true,
       templateUrl: './templates/ingredient.tpl.html',
-      link: function(scope, element) {
+      link: function (scope, element) {
         scope.itemCount = scope.ingredient.items.length;
         scope.ingredient.activeIndex = scope.ingredient.activeIndex || 0;
 
-        scope.next = function() {
+        scope.next = function () {
           scope.ingredient.activeIndex = (scope.ingredient.activeIndex + 1) % scope.itemCount;
         };
       },
@@ -36,7 +36,7 @@ angular.module('app').directive('ingredient', ['itemService', '$compile',
 ]);
 
 angular.module('app').directive('itemStack', ['itemService',
-  function(itemService) {
+  function (itemService) {
     return {
       restrict: 'E',
       scope: {
@@ -46,7 +46,7 @@ angular.module('app').directive('itemStack', ['itemService',
       },
       transclude: true,
       templateUrl: './templates/directives/item-stack.tpl.html',
-      link: function(scope, element) {
+      link: function (scope, element) {
         scope.$watchGroup(['sid', 'item'], function () {
           var item = scope.item;
           var sid = scope.sid;
@@ -56,7 +56,7 @@ angular.module('app').directive('itemStack', ['itemService',
           if (item) {
             scope.item = item;
           } else if (sid) {
-            itemService.getItemBySid(sid).then(function(item) {
+            itemService.getItemBySid(sid).then(function (item) {
               scope.item = item;
             });
           }
@@ -67,7 +67,7 @@ angular.module('app').directive('itemStack', ['itemService',
 ]);
 
 angular.module('app').directive('recipe', ['itemService',
-  function() {
+  function () {
     return {
       restrict: 'E',
       scope: {
@@ -80,7 +80,7 @@ angular.module('app').directive('recipe', ['itemService',
 ]);
 
 angular.module('app').directive('itemSelector', ['itemService',
-  function() {
+  function () {
     return {
       restrict: 'E',
       transclude: true,
@@ -92,7 +92,7 @@ angular.module('app').directive('itemSelector', ['itemService',
 ]);
 
 angular.module('app').directive('inventory', ['itemService',
-  function() {
+  function () {
     return {
       restrict: 'E',
       transclude: true,
@@ -102,15 +102,15 @@ angular.module('app').directive('inventory', ['itemService',
       },
       controllerAs: 'ctrl',
       templateUrl: './templates/directives/inventory.tpl.html',
-      link: function($scope) {
+      link: function ($scope) {
         $scope.inventory = $scope.inventory || [];
 
-        $scope.removeInventoryItem = function(stack) {
+        $scope.removeInventoryItem = function (stack) {
           var stacks = $scope.inventory;
           stacks.splice(stacks.indexOf(stack), 1);
         };
 
-        $scope.$on('itemAdded', function(event, item) {
+        $scope.$on('itemAdded', function (event, item) {
           if (item) {
             $scope.inventory.push({
               item: item,
@@ -119,15 +119,15 @@ angular.module('app').directive('inventory', ['itemService',
           }
         });
 
-        $scope.$watch(function() {
+        $scope.$watch(function () {
 
           var res = [];
-          angular.forEach($scope.inventory, function(stack) {
+          angular.forEach($scope.inventory, function (stack) {
             this.push(stack.item.sid + '-' + stack.count);
           }, res);
           return res.join('|');
 
-        }, function() {
+        }, function () {
           $scope.onInventoryChanged({
             inventory: $scope.inventory
           });
@@ -139,7 +139,7 @@ angular.module('app').directive('inventory', ['itemService',
 
 angular.module('app').directive('craftGraph', ['itemService', '$q',
 
-  function(itemService, $q) {
+  function (itemService, $q) {
     return {
       restrict: 'E',
       scope: {
@@ -148,7 +148,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
       },
       //transclude: true,
       //templateUrl: './templates/ingredient.tpl.html',
-      link: function(scope, element) {
+      link: function (scope, element) {
 
         var width = 800;
         var height = 1000;
@@ -157,7 +157,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
 
         var zoom = d3.behavior.zoom()
           .scaleExtent([0.1, 1])
-          .on("zoom", function() {
+          .on("zoom", function () {
             container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
           });
 
@@ -171,7 +171,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
 
         var color = d3.scale.category20();
 
-        var updateGraph = function() {
+        var updateGraph = function () {
 
           var graphData = scope.plan.getGraphData();
 
@@ -179,10 +179,10 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
 
           var posOnLevel = {};
 
-          angular.forEach(graphData.nodes, function(sid) {
+          angular.forEach(graphData.nodes, function (sid) {
             var deferred = $q.defer();
 
-            itemService.getItemBySid(sid).then(function(item) {
+            itemService.getItemBySid(sid).then(function (item) {
               var isGoal = graphData.goals.indexOf(sid) >= 0;
 
               var level = graphData.nodeLevels[sid];
@@ -193,9 +193,10 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
                 item: item,
                 id: sid,
                 //fixed: isGoal,
-                fixed: true,
-                x: pos * 100,
-                y: level * 100,
+                //fixed: true,
+                //x: pos * 100,
+                //y: level * 100,
+                value: 1,
                 count: graphData.itemCounts[sid]
               });
             });
@@ -203,16 +204,122 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
             this.push(deferred.promise);
           }, itemPromises);
 
-          var nodeIsLeaf = function(node) {
+          var nodeIsLeaf = function (node) {
             return graphData.goals.indexOf(node.id) < 0 && graphData.crafted.indexOf(node.id) < 0;
           };
 
-          $q.all(itemPromises).then(function(nodes) {
+          $q.all(itemPromises).then(function (nodes) {
             container.selectAll('*').remove();
+            var sankey = d3.sankey()
+
+            sankey
+              .size([width, height])
+              .nodeWidth(48)
+              .nodePadding(10)
+              .nodes(nodes)
+              .links(graphData.links)
+              .layout(32);
+
+            var path = sankey.link();
+
+            var linkEl = container.selectAll(".link")
+              .data(graphData.links)
+              .enter();
+
+            var link = linkEl.append("path")
+              .attr("class", "link")
+              .attr("d", path)
+              .style("fill", "none")
+              .sort(function (a, b) {
+                return b.dy - a.dy;
+              });
+
+            var linkText = linkEl.append("text")
+              .attr('class', 'link-text')
+              .attr('x', function (d) {
+                return d.source.x + 48;
+              })
+              .attr('y', function (d) {
+                return d.source.y + 12;
+              })
+              .attr("dy", ".35em")
+              .text(function (d) {
+                return d.amount;
+              });
+
+            var node = container.selectAll(".node")
+              .data(nodes)
+              .enter().append("g")
+              .attr("class", "node")
+              .attr("transform", function (d) {
+                return "translate(" + d.x + "," + d.y + ")";
+              })
+              .on('mouseover', function (d) {
+                var currentId = d.id;
+                d3.select(d3.event.currentTarget).attr('class', 'node node-hovered');
+
+                link.attr("class", function (d) {
+                  if (d.target.id === currentId) {
+                    return 'link hover-link target-hover-link';
+                  }
+                  if (d.source.id === currentId) {
+                    return 'link hover-link source-hover-link'
+                  }
+                  return 'link';
+                });
+
+                linkText.style('visibility', function (d) {
+                  if (d.target.id === currentId) {
+                    return 'visible';
+                  }
+                  return 'hidden';
+                });
+
+              })
+              .on('mouseout', function (d) {
+                link.attr("class", "link");
+                linkText.style('visibility', 'hidden');
+                d3.select(d3.event.currentTarget).attr('class', 'node');
+              })
+              .call(d3.behavior.drag()
+                .origin(function (d) {
+                  return d;
+                })
+                .on("dragstart", function () {
+                  this.parentNode.appendChild(this);
+                })
+                .on("drag", dragmove));
+
+            node.append("image")
+              .attr("xlink:href", function (d) {
+                return getItemIcon(d.item);
+              })
+              .attr('y', function (d) {
+                return d.dy / 2 - 24;
+              })
+              .attr('width', '48px')
+              .attr('height', '48px');
+
+            node.append("text")
+            .attr("x", 24)
+            .attr("y", function(d) { return d.dy + 6; })
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
+            .attr("transform", null)
+            .text(function(d) { return d.item.displayName + ' x ' + d.count; })
+
+            function dragmove(d) {
+              d3.select(this).attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))) + ")");
+              sankey.relayout();
+              link.attr("d", path);
+            }
+
+
+            return;
 
             var force = d3.layout.force()
               .gravity(0)
-              .charge(function(node) {
+              .charge(function (node) {
                 return nodeIsLeaf(node) ? -2000 : -200;
               })
               .linkDistance(200)
@@ -228,29 +335,29 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
             var node = container.selectAll('.node')
               .data(nodes)
               .enter().append('g')
-              .attr('class', function(d) {
+              .attr('class', function (d) {
                 return 'node' + (nodeIsLeaf(d) ? ' node-leaf' : '');
               })
-              .attr("transform", function(d) {
+              .attr("transform", function (d) {
                 return "translate(" + d.x + "," + d.y + ")";
               })
-              .on('mouseover', function(d) {
+              .on('mouseover', function (d) {
                 d.isHovered = true;
                 onTick();
               })
-              .on('mouseout', function(d) {
+              .on('mouseout', function (d) {
                 d.isHovered = false;
                 onTick();
               })
               .call(force.drag);
 
             node.append("title")
-              .text(function(d) {
+              .text(function (d) {
                 return d.item.displayName;
               });
 
             node.append("image")
-              .attr("xlink:href", function(d) {
+              .attr("xlink:href", function (d) {
                 return getItemIcon(d.item);
               })
               .attr('x', '-24px')
@@ -261,7 +368,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
             node.append('text')
               .attr('dx', 28)
               .attr('dy', 4)
-              .text(function(d) {
+              .text(function (d) {
                 return d.count;
               });
 
@@ -274,24 +381,24 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
 
             var linkText = linkEl.append('text');
 
-            linkText.attr('x', function(d) {
+            linkText.attr('x', function (d) {
                 return (d.target.x + d.source.x) / 2;
               })
-              .attr('y', function(d) {
+              .attr('y', function (d) {
                 return (d.target.y + d.source.y) / 2;
               })
-              .style('visibility', function(d) {
+              .style('visibility', function (d) {
                 if (d.source.isHovered || d.target.isHovered) {
                   return 'visible';
                 }
                 return 'hidden';
               })
-              .text(function(d) {
+              .text(function (d) {
                 return d.amount;
               });
 
-            var onTick = function() {
-              link.attr("x1", function(d) {
+            var onTick = function () {
+              link.attr("x1", function (d) {
                   var delta = 0;
                   if (d.target.x !== d.source.x) {
                     delta = 24;
@@ -301,7 +408,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
                   }
                   return d.source.x + delta;
                 })
-                .attr("y1", function(d) {
+                .attr("y1", function (d) {
                   var delta = 0;
                   if (d.target.y !== d.source.y) {
                     delta = 24;
@@ -311,7 +418,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
                   }
                   return d.source.y + delta;
                 })
-                .attr("x2", function(d) {
+                .attr("x2", function (d) {
                   var delta = 0;
                   if (d.target.x !== d.source.x) {
                     delta = 24;
@@ -321,7 +428,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
                   }
                   return d.target.x + delta;
                 })
-                .attr("y2", function(d) {
+                .attr("y2", function (d) {
                   var delta = 0;
                   if (d.target.y !== d.source.y) {
                     delta = 24;
@@ -331,7 +438,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
                   }
                   return d.target.y + delta;
                 })
-                .style("stroke", function(d) {
+                .style("stroke", function (d) {
                   if (d.source.isHovered) {
                     return 'red';
                   }
@@ -340,7 +447,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
                   }
                   return '#999';
                 })
-                .style("stroke-width", function(d) {
+                .style("stroke-width", function (d) {
                   if (d.source.isHovered || d.target.isHovered) {
                     return 6;
                   }
@@ -348,7 +455,7 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
                 });
 
               node
-                .attr("transform", function(d) {
+                .attr("transform", function (d) {
                   return "translate(" + d.x + "," + d.y + ")";
                 });
             };
@@ -359,20 +466,20 @@ angular.module('app').directive('craftGraph', ['itemService', '$q',
 
         };
 
-        scope.$watch(function() {
+        scope.$watch(function () {
           var ids = [];
-          angular.forEach(scope.plan.craftingSteps, function(step) {
+          angular.forEach(scope.plan.craftingSteps, function (step) {
             this.push(step.result.sid + ':' + step.count);
           }, ids);
           return ids.sort().join('|');
-        }, function() {
+        }, function () {
           if (scope.enabled) {
             updateGraph();
           }
 
         });
 
-        scope.$watch('enabled', function() {
+        scope.$watch('enabled', function () {
           if (scope.enabled) {
             updateGraph();
           }

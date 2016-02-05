@@ -43,6 +43,126 @@
 
       };
 
+      var Step = function (stepData) {
+        this.result = stepData.result;
+        this.recipe = stepData.recipe;
+        this.count = stepData.count;
+
+        return angular.extend(this, {
+          getId: function () {
+            return this.result.sid + '-' + this.recipe._id;
+          }
+        });
+      };
+
+      var State = function () {
+        var required = {};
+
+        var addRequired = function (item, count) {
+          addToItemMap(required, item, count);
+        };
+        var addProduced = function (item, count) {
+          addToItemMap(required, item, -count);
+        };
+        var getRequiredCount = function (sid) {
+          return required[sid] && required[sid].count > 0 ? required[sid].count : 0;
+        };
+
+        var getRequired = function () {
+          var _required = [];
+          angular.forEach(required, function (info, sid) {
+            if (info.count > 0) {
+              this.push(info);
+            }
+          }, _required);
+
+          return _required;
+        };
+
+        var getProduced = function () {
+          var _produced = [];
+          angular.forEach(required, function (info, sid) {
+            if (info.count < 0) {
+              this.push({
+                item: info.item,
+                count: -info.count
+              });
+            }
+          }, _produced);
+
+          return _produced;
+        };
+
+        return angular.extend(this, {
+          addRequired: addRequired,
+          addProduced: addProduced,
+          getRequiredCount: getRequiredCount,
+          getRequired: getRequired,
+          getProduced: getProduced,
+          applyStep: function (step) {
+            var resultSid = step.result.sid;
+            var requiredCount = getRequiredCount(resultSid);
+
+            var repeatCount = Math.ceil(requiredCount / step.result.size);
+            var resultCount = step.result.size * repeatCount;
+            step.count = repeatCount;
+
+            addProduced(step.result, resultCount);
+
+            angular.forEach(step.recipe.ingredients, function (ingredient) {
+              var ingredientItem = ingredient.items[ingredient.activeIndex];
+
+              var requiredCount = repeatCount * ingredientItem.size;
+
+              addRequired(ingredientItem, requiredCount);
+            });
+          }
+        });
+      };
+
+      var Dependencies = function (data) {
+        this.data = data;
+
+        return angular.extend(this, {
+          get: function (source) {
+            var deps = [];
+            angular.forEach(this.data, function (dep) {
+              if (dep.source === source) {
+                this.push(dep.target);
+              }
+            }, deps);
+
+            return deps;
+          },
+          add: function (source, target) {
+            var exists = false;
+            angular.forEach(this.data, function (dep) {
+              if (dep.source === source && dep.target === target) {
+                exists = false;
+                return false;
+              }
+            });
+
+            if (!exists) {
+              this.data.push({
+                source: source,
+                target: target
+              });
+            }
+          },
+          remove: function (id) {
+            var filtered = [];
+            angular.forEach(this.data, function (dep) {
+              if (dep.source !== id && dep.target !== id) {
+                this.push(dep);
+              }
+            }, filtered);
+
+            this.data = filtered;
+          }
+        });
+      };
+
       var plan$ = {
         getGraphData: function () {
           var _self = this;
@@ -96,11 +216,31 @@
               var ingredientCount = step.count * ingredientItem.size;
               countItem(ingredientItem.sid, ingredientCount);
 
-              links.push({
-                target: nodes.indexOf(step.result.sid),
-                source: nodes.indexOf(ingredientItem.sid),
-                amount: ingredientCount,
+              var target = nodes.indexOf(step.result.sid);
+              var source = nodes.indexOf(ingredientItem.sid);
+
+              if (target === source) {
+                return;
+              }
+
+              var sameLink = false;
+              angular.forEach(links, function (link) {
+                if (link.target === target && link.source === source) {
+                  sameLink = link;
+                  return false;
+                }
               });
+
+              if (sameLink) {
+                sameLink.amount += ingredientCount;
+              } else {
+                links.push({
+                  target: target,
+                  source: source,
+                  amount: ingredientCount,
+                  value: 1,
+                });
+              }
 
               simpleLinks.push({
                 target: step.result.sid,
@@ -150,76 +290,101 @@
         },
         recalcRequired: function () {
           var _self = this;
-          var required = {};
-          var having = {};
+
+          var state = new State();
 
           angular.forEach(_self.inventory, function (stack) {
-            addToItemMap(having, stack.item, stack.count);
+            state.addProduced(stack.item, stack.count);
           });
 
-          angular.forEach(_self.goals, function (goal) {
-            addToItemMap(this, goal.item, goal.count);
-          }, required);
+          angular.forEach(_self.goals, function (stack) {
+            state.addRequired(stack.item, stack.count);
+          });
+
+          var stepComplete = [];
+          var stepOrder = [];
+
+          var stepByIdMap = {};
 
           angular.forEach(_self.craftingSteps, function (step) {
-            var resultSid = step.result.sid;
-            var requiredCount = required[resultSid] ? required[resultSid].count : 0;
+            stepByIdMap[step.getId()] = step;
+          }, stepByIdMap);
 
-            if (step.autoScale) {
-              step.count = Math.ceil(requiredCount / step.result.size);
-            }
+          var _processStep = function (step, state) {
 
-            var resultCount = step.result.size * step.count;
-
-            var delta = resultCount - requiredCount;
-
-            if (delta >= 0) {
-              delete required[resultSid];
-              addToItemMap(having, step.result, delta);
-            } else {
-              addToItemMap(required, step.result, -resultCount);
-            }
-
-            angular.forEach(step.recipe.ingredients, function (ingredient) {
-              var ingredientItem = ingredient.items[ingredient.activeIndex];
-
-              var alreadyHaving = having[ingredientItem.sid];
-
-              var requiredCount = step.count * ingredientItem.size;
-
-              if (alreadyHaving) {
-                var countFromHaving = Math.min(requiredCount, alreadyHaving.count);
-                addToItemMap(having, ingredientItem, -countFromHaving);
-                requiredCount -= countFromHaving;
-              }
-
-              addToItemMap(required, ingredientItem, requiredCount);
+            angular.forEach(_self.dependencies.get(step.getId()), function (stepId) {
+              processStep(stepId, state);
             });
 
+            state.applyStep(step);
+            stepComplete.push(step.getId());
+            stepOrder.push(step);
+          };
+
+          var processStep = function (stepId, state) {
+            if (stepComplete.indexOf(stepId) >= 0) {
+              return true;
+            }
+
+            var step = stepByIdMap[stepId];
+            if (step) {
+              _processStep(step, state);
+            }
+          };
+
+          angular.forEach(_self.craftingSteps, function (step) {
+            processStep(step.getId(), state);
           });
 
+          _self.craftingSteps = stepOrder;
+
           return {
-            requiredItems: required,
-            sideResults: having
+            requiredItems: state.getRequired(),
+            sideResults: state.getProduced()
           };
         },
         addStep: function (step) {
           var _self = this;
-          var sameStepIndex = -1;
+          var sameStep;
+
+          var newStep = new Step(step);
+
           angular.forEach(_self.craftingSteps, function (existingStep, index) {
-            if (existingStep.result.sid === step.result.sid && existingStep.recipe._id === step.recipe._id) {
-              sameStepIndex = index;
+            if (existingStep.getId() === newStep.getId()) {
+              sameStep = existingStep;
             }
           });
 
-          if (sameStepIndex >= 0) {
-            step.count += _self.craftingSteps[sameStepIndex].count;
-            _self.craftingSteps.splice(sameStepIndex, 1);
+          if (!sameStep) {
+            var ownIngredients = [];
+            angular.forEach(step.recipe.ingredients, function (ingredient) {
+              var ingredientItem = ingredient.items[ingredient.activeIndex];
+              this.push(ingredientItem.sid);
+            }, ownIngredients);
+
+            angular.forEach(_self.craftingSteps, function (step) {
+
+              var ingredientSids = [];
+              angular.forEach(step.recipe.ingredients, function (ingredient) {
+                var ingredientItem = ingredient.items[ingredient.activeIndex];
+                this.push(ingredientItem.sid);
+              }, ingredientSids);
+
+              if (ingredientSids.indexOf(newStep.result.sid) >= 0) {
+                _self.dependencies.add(newStep.getId(), step.getId());
+              }
+
+              if (ownIngredients.indexOf(step.result.sid) >= 0) {
+                _self.dependencies.add(step.getId(), newStep.getId());
+              }
+            });
+
+            _self.craftingSteps.push(newStep);
           }
-          _self.craftingSteps.push(step);
         },
         removeStep: function (step) {
           this.craftingSteps.splice(this.craftingSteps.indexOf(step), 1);
+          this.dependencies.remove(step.getId());
         },
         addItemToInventory: function (item, count) {
           var _self = this;
@@ -237,9 +402,20 @@
         }
       };
 
+      var createPlanObject = function (initObject) {
+        var steps = []
+        angular.forEach(initObject.craftingSteps, function (step) {
+          this.push(new Step(step));
+        }, steps);
+
+        initObject.craftingSteps = steps;
+        initObject.dependencies = new Dependencies(initObject.dependencies || []);
+        return angular.extend(Object.create(plan$), initObject);
+      };
+
       return {
         createNewPlan: function () {
-          return angular.extend(Object.create(plan$), {
+          return createPlanObject({
             inventory: [],
             craftingSteps: [],
             goals: [],
@@ -267,7 +443,7 @@
             var planData = angular.fromJson(plan.data);
             planData.name = plan.name;
             planData._id = plan._id;
-            deferred.resolve(angular.extend(Object.create(plan$), planData));
+            deferred.resolve(createPlanObject(planData));
           });
 
           return deferred.promise;

@@ -224,18 +224,8 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
     $scope.refreshPlan = function () {
       var result = $scope.plan.recalcRequired();
 
-      var required = [];
-      angular.forEach(result.requiredItems, function (item) {
-        this.push(item);
-      }, required);
-      $scope.requiredItems = required;
-
-      var having = [];
-      angular.forEach(result.sideResults, function (item) {
-        this.push(item);
-      }, having);
-
-      $scope.havingItems = having;
+      $scope.requiredItems = result.requiredItems;
+      $scope.havingItems = result.sideResults;
     };
 
     ctrl.savePlan = function (plan) {
