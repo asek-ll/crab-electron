@@ -185,7 +185,7 @@ d3.sankey = function() {
       });
 
       links.forEach(function(link) {
-        link.dy = link.value * ky;
+        link.dy = 48;
       });
     }
 
