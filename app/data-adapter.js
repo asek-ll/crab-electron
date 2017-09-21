@@ -6,7 +6,7 @@ var generateId = function () {
   return Math.random().toString(16).slice(2)
 };
 
-var generateUid = function () {
+ var generateUid = function () {
   var id = generateId();
 
   do {
