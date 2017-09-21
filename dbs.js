@@ -3,11 +3,23 @@ const log4js = require('log4js');
 
 const Datastore = require('nedb');
 
-log4js.loadAppender('file');
-log4js.addAppender(log4js.appenders.file('logs/info.log'), 'info');
+log4js.configure({
+  appenders: {
+    file: {
+      type: 'file',
+      filename: 'logs/info.log',
+    }
+  },
+  categories: {
+    default: {
+      appenders: ['file'],
+      level: 'info',
+    }
+  }
+});
 
-var logger = log4js.getLogger('info');
-logger.setLevel('TRACE');
+var logger = log4js.getLogger('file');
+logger.level = 'trace';
 
 const databases = [
   'recipes',
