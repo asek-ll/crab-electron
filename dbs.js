@@ -89,13 +89,13 @@ module.exports = function () {
 
     logger.debug(dbName + '-insert');
     registerHandler(dbName + '-insert', function (data, callback) {
-      logger.debug('trigger', dbName + '-update', data);
+      logger.debug('trigger', dbName + '-insert', data);
       db.insert(data.data, callback);
     });
 
     logger.debug(dbName + '-remove');
     registerHandler(dbName + '-remove', function (data, callback) {
-      logger.debug('trigger', dbName + '-update', data);
+      logger.debug('trigger', dbName + '-remove', data);
       db.remove(data.query, callback);
     });
   });
