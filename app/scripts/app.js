@@ -145,13 +145,13 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
         .then(function (recipe) {
           var targetItem;
 
-          angular.forEach(recipe.result.items, function (item) {
+          angular.forEach(recipe.result, function (item) {
             if (required.item.sid === item.sid) {
               targetItem = item;
             }
           });
 
-          recipe.result.items = [targetItem];
+          recipe.result = [targetItem];
 
           var step = {
             result: targetItem,
@@ -172,7 +172,7 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
       expandRulesService.getRecipeForItem(required.item.sid).then(function (recipe) {
         var targetItem;
 
-        angular.forEach(recipe.result.items, function (item) {
+        angular.forEach(recipe.result, function (item) {
           if (required.item.sid === item.sid) {
             targetItem = item;
           }
@@ -187,7 +187,7 @@ angular.module('app').controller('PlanCtrl', ['$scope', 'itemService', '$mdDialo
 
         var promises = [];
         angular.forEach(recipe.ingredients, function (ingredient) {
-          var ingredientItem = ingredient.items[ingredient.activeIndex];
+          var ingredientItem = ingredient[ingredient.activeIndex];
           promises.push(autoExpand(plan, {
             count: ingredientItem.size * repeats,
             item: ingredientItem
@@ -364,7 +364,7 @@ angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$rou
   function ($scope, recipeService, $routeParams) {
     var transformIngredient2Inventory = function (ingredient) {
       var stacks = [];
-      angular.forEach(ingredient.items, function (item) {
+      angular.forEach(ingredient, function (item) {
         this.push({
           item: item,
           count: item.size
@@ -406,7 +406,7 @@ angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$rou
       var ingredients = [];
       angular.forEach(inventories, function (inventory) {
         var ingredient = transformInventory2Ingredient(inventory);
-        if (ingredient.items.length > 0) {
+        if (ingredients.length > 0) {
           this.push(ingredient);
         }
       }, ingredients);
@@ -466,7 +466,7 @@ angular.module('app').controller('RecipeCtrl', ['$scope', 'recipeService', '$rou
         ingredients: [],
         others:[],
         handlerName:'Custom Crafting'
-      }
+      };
       initScope(recipe);
     }
 

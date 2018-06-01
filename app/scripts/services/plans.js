@@ -110,7 +110,7 @@
             addProduced(step.result, resultCount);
 
             angular.forEach(step.recipe.ingredients, function (ingredient) {
-              var ingredientItem = ingredient.items[ingredient.activeIndex];
+              var ingredientItem = ingredient[ingredient.activeIndex];
 
               var requiredCount = repeatCount * ingredientItem.size;
 
@@ -209,7 +209,7 @@
             craftable.push(step.result.sid);
 
             angular.forEach(step.recipe.ingredients, function (ingredient) {
-              var ingredientItem = ingredient.items[ingredient.activeIndex];
+              var ingredientItem = ingredient[ingredient.activeIndex];
 
               createNode(ingredientItem.sid);
 
@@ -358,7 +358,7 @@
           if (!sameStep) {
             var ownIngredients = [];
             angular.forEach(step.recipe.ingredients, function (ingredient) {
-              var ingredientItem = ingredient.items[ingredient.activeIndex];
+              var ingredientItem = ingredient[ingredient.activeIndex];
               this.push(ingredientItem.sid);
             }, ownIngredients);
 
@@ -366,7 +366,7 @@
 
               var ingredientSids = [];
               angular.forEach(step.recipe.ingredients, function (ingredient) {
-                var ingredientItem = ingredient.items[ingredient.activeIndex];
+                var ingredientItem = ingredient[ingredient.activeIndex];
                 this.push(ingredientItem.sid);
               }, ingredientSids);
 

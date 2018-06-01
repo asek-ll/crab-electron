@@ -1,6 +1,6 @@
 <div class="ingredient">
   <ul class="items">
-    <li ng-repeat="item in ingredient.items" ng-show="$index == ingredient.activeIndex">
+    <li ng-repeat="item in ingredient" ng-show="$index == ingredient.activeIndex">
       <item-stack sid="item.sid" size="item.size"></item-stack>
     </li>
   </ul>

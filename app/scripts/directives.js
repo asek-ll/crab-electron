@@ -5,13 +5,7 @@ var getItemIcon = function (item) {
   if (!item) {
     return '';
   }
-  var parts = item.sid.split(':');
-  var path = parts[0] + '/' + parts[1];
-  if (parts.length > 2) {
-    path += '_' + parts[2];
-  }
-
-  return '../data_sets/data/icons/' + path + '.png';
+  return 'data:image/png; base64,' + item.icon;
 };
 
 angular.module('app').directive('ingredient', ['itemService', '$compile',
@@ -24,7 +18,7 @@ angular.module('app').directive('ingredient', ['itemService', '$compile',
       transclude: true,
       templateUrl: './templates/ingredient.tpl.html',
       link: function (scope, element) {
-        scope.itemCount = scope.ingredient.items.length;
+        scope.itemCount = scope.ingredient.length;
         scope.ingredient.activeIndex = scope.ingredient.activeIndex || 0;
 
         scope.next = function () {

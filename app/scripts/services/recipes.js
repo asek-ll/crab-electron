@@ -48,7 +48,7 @@
         },
         getRecipes: function (outputSid) {
           var query = {
-            'result.items.sid': outputSid
+            'result.sid': outputSid
           };
 
           var deferred = $q.defer();
